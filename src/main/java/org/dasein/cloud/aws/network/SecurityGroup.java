@@ -90,13 +90,13 @@ public class SecurityGroup extends AbstractFirewallSupport<AWSCloud> {
             Firewall fw = getFirewall(firewallId);
 
             if( fw == null ) {
-                throw new CloudException("No such firewall: " + firewallId);
+                throw new GeneralCloudException("No such firewall: " + firewallId);
             }
             if( direction.equals(Direction.EGRESS) && isAwsEc2Classic(fw) ) {
                 throw new OperationNotSupportedException("AWS does not support EGRESS rules for non-VPC security groups");
             }
             String action = ( direction.equals(Direction.INGRESS) ? EC2Method.AUTHORIZE_SECURITY_GROUP_INGRESS : EC2Method.AUTHORIZE_SECURITY_GROUP_EGRESS );
-            Map<String, String> parameters = getProvider().getStandardParameters(getProvider().getContext(), action);
+            Map<String, String> parameters = getProvider().getStandardParameters(action);
             String targetGroupId = null;
             boolean group;
             EC2Method method;
@@ -169,12 +169,12 @@ public class SecurityGroup extends AbstractFirewallSupport<AWSCloud> {
                     // TODO: fix me
                 }
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             blocks = doc.getElementsByTagName("return");
             if( blocks.getLength() > 0 ) {
                 if( !blocks.item(0).getFirstChild().getNodeValue().equalsIgnoreCase("true") ) {
-                    throw new CloudException("Failed to authorize security group rule without explanation.");
+                    throw new GeneralCloudException("Failed to authorize security group rule without explanation.");
                 }
             }
             return FirewallRule.getInstance(null, firewallId, sourceEndpoint, direction, protocol, permission, destinationEndpoint, beginPort, endPort).getProviderRuleId();
@@ -187,7 +187,7 @@ public class SecurityGroup extends AbstractFirewallSupport<AWSCloud> {
     public @Nonnull String create(@Nonnull FirewallCreateOptions options) throws InternalException, CloudException {
         APITrace.begin(getProvider(), "Firewall.create");
         try {
-            Map<String, String> parameters = getProvider().getStandardParameters(getProvider().getContext(), EC2Method.CREATE_SECURITY_GROUP);
+            Map<String, String> parameters = getProvider().getStandardParameters(EC2Method.CREATE_SECURITY_GROUP);
             String firewallId;
             EC2Method method;
             NodeList blocks;
@@ -206,7 +206,7 @@ public class SecurityGroup extends AbstractFirewallSupport<AWSCloud> {
                 doc = method.invoke();
             } catch( EC2Exception e ) {
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             if( getProvider().getEC2Provider().isEucalyptus() ) {
                 firewallId = name;
@@ -234,7 +234,7 @@ public class SecurityGroup extends AbstractFirewallSupport<AWSCloud> {
                     }
                     firewallId = id;
                 } else {
-                    throw new CloudException("Failed to create security group without explanation.");
+                    throw new GeneralCloudException("Failed to create security group without explanation.");
                 }
             }
             FirewallRuleCreateOptions[] ruleOptions = options.getInitialRules();
@@ -254,7 +254,7 @@ public class SecurityGroup extends AbstractFirewallSupport<AWSCloud> {
     public void delete(@Nonnull String securityGroupId) throws InternalException, CloudException {
         APITrace.begin(getProvider(), "Firewall.delete");
         try {
-            Map<String, String> parameters = getProvider().getStandardParameters(getProvider().getContext(), EC2Method.DELETE_SECURITY_GROUP);
+            Map<String, String> parameters = getProvider().getStandardParameters(EC2Method.DELETE_SECURITY_GROUP);
             EC2Method method;
             NodeList blocks;
             Document doc;
@@ -269,12 +269,12 @@ public class SecurityGroup extends AbstractFirewallSupport<AWSCloud> {
                 doc = method.invoke();
             } catch( EC2Exception e ) {
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             blocks = doc.getElementsByTagName("return");
             if( blocks.getLength() > 0 ) {
                 if( !blocks.item(0).getFirstChild().getNodeValue().equalsIgnoreCase("true") ) {
-                    throw new CloudException("Failed to delete security group without explanation.");
+                    throw new GeneralCloudException("Failed to delete security group without explanation.");
                 }
             }
         } finally {
@@ -303,9 +303,9 @@ public class SecurityGroup extends AbstractFirewallSupport<AWSCloud> {
             ProviderContext ctx = getProvider().getContext();
 
             if( ctx == null ) {
-                throw new CloudException("No context has been established for this request");
+                throw new GeneralCloudException("No context has been established for this request");
             }
-            Map<String, String> parameters = getProvider().getStandardParameters(getProvider().getContext(), EC2Method.DESCRIBE_SECURITY_GROUPS);
+            Map<String, String> parameters = getProvider().getStandardParameters(EC2Method.DESCRIBE_SECURITY_GROUPS);
             EC2Method method;
             NodeList blocks;
             Document doc;
@@ -325,7 +325,7 @@ public class SecurityGroup extends AbstractFirewallSupport<AWSCloud> {
                     return null;
                 }
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             blocks = doc.getElementsByTagName("securityGroupInfo");
             for( int i = 0; i < blocks.getLength(); i++ ) {
@@ -368,7 +368,7 @@ public class SecurityGroup extends AbstractFirewallSupport<AWSCloud> {
     public @Nonnull Collection<FirewallRule> getRules(@Nonnull String securityGroupId) throws InternalException, CloudException {
         APITrace.begin(getProvider(), "Firewall.getRules");
         try {
-            Map<String, String> parameters = getProvider().getStandardParameters(getProvider().getContext(), EC2Method.DESCRIBE_SECURITY_GROUPS);
+            Map<String, String> parameters = getProvider().getStandardParameters(EC2Method.DESCRIBE_SECURITY_GROUPS);
             ArrayList<FirewallRule> list = new ArrayList<FirewallRule>();
             EC2Method method;
             NodeList blocks;
@@ -389,7 +389,7 @@ public class SecurityGroup extends AbstractFirewallSupport<AWSCloud> {
                     return Collections.emptyList();
                 }
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             blocks = doc.getElementsByTagName("securityGroupInfo");
             for( int i = 0; i < blocks.getLength(); i++ ) {
@@ -485,7 +485,7 @@ public class SecurityGroup extends AbstractFirewallSupport<AWSCloud> {
                         c = 'a';
                         count++;
                         if( count > 10 ) {
-                            throw new CloudException("Could not generate a unique firewall name from " + baseName);
+                            throw new GeneralCloudException("Could not generate a unique firewall name from " + baseName);
                         }
                     } else {
                         c++;
@@ -521,9 +521,9 @@ public class SecurityGroup extends AbstractFirewallSupport<AWSCloud> {
             ProviderContext ctx = getProvider().getContext();
 
             if( ctx == null ) {
-                throw new CloudException("No context has been established for this request");
+                throw new GeneralCloudException("No context has been established for this request");
             }
-            Map<String, String> parameters = getProvider().getStandardParameters(getProvider().getContext(), EC2Method.DESCRIBE_SECURITY_GROUPS);
+            Map<String, String> parameters = getProvider().getStandardParameters(EC2Method.DESCRIBE_SECURITY_GROUPS);
             ArrayList<Firewall> list = new ArrayList<Firewall>();
             EC2Method method;
             NodeList blocks;
@@ -534,7 +534,7 @@ public class SecurityGroup extends AbstractFirewallSupport<AWSCloud> {
                 doc = method.invoke();
             } catch( EC2Exception e ) {
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             blocks = doc.getElementsByTagName("securityGroupInfo");
             for( int i = 0; i < blocks.getLength(); i++ ) {
@@ -565,9 +565,9 @@ public class SecurityGroup extends AbstractFirewallSupport<AWSCloud> {
             ProviderContext ctx = getProvider().getContext();
 
             if( ctx == null ) {
-                throw new CloudException("No context has been established for this request");
+                throw new GeneralCloudException("No context has been established for this request");
             }
-            Map<String, String> parameters = getProvider().getStandardParameters(getProvider().getContext(), EC2Method.DESCRIBE_SECURITY_GROUPS);
+            Map<String, String> parameters = getProvider().getStandardParameters(EC2Method.DESCRIBE_SECURITY_GROUPS);
             ArrayList<ResourceStatus> list = new ArrayList<ResourceStatus>();
             EC2Method method;
             NodeList blocks;
@@ -578,7 +578,7 @@ public class SecurityGroup extends AbstractFirewallSupport<AWSCloud> {
                 doc = method.invoke();
             } catch( EC2Exception e ) {
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             blocks = doc.getElementsByTagName("securityGroupInfo");
             for( int i = 0; i < blocks.getLength(); i++ ) {
@@ -667,7 +667,7 @@ public class SecurityGroup extends AbstractFirewallSupport<AWSCloud> {
             }
         }
         if( rule == null ) {
-            throw new CloudException("Unable to parse rule ID: " + providerFirewallRuleId);
+            throw new GeneralCloudException("Unable to parse rule ID: " + providerFirewallRuleId);
         }
         revoke(rule.getFirewallId(), rule.getDirection(), rule.getPermission(), rule.getSourceEndpoint(), rule.getProtocol(), rule.getDestinationEndpoint(), rule.getStartPort(), rule.getEndPort());
     }
@@ -690,7 +690,7 @@ public class SecurityGroup extends AbstractFirewallSupport<AWSCloud> {
                 throw new OperationNotSupportedException("AWS does not support EGRESS rules for non-VPC security groups");
             }
             String action = ( direction.equals(Direction.INGRESS) ? EC2Method.REVOKE_SECURITY_GROUP_INGRESS : EC2Method.REVOKE_SECURITY_GROUP_EGRESS );
-            Map<String, String> parameters = getProvider().getStandardParameters(getProvider().getContext(), action);
+            Map<String, String> parameters = getProvider().getStandardParameters(action);
             String targetGroupId = null;
             boolean group;
             EC2Method method;
@@ -743,7 +743,7 @@ public class SecurityGroup extends AbstractFirewallSupport<AWSCloud> {
                 doc = method.invoke();
             } catch( EC2Exception e ) {
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             method.checkSuccess(doc.getElementsByTagName("return"));
         } finally {

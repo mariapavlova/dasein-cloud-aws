@@ -22,7 +22,9 @@ package org.dasein.cloud.aws.platform;
 import org.dasein.cloud.AbstractCapabilities;
 import org.dasein.cloud.CloudException;
 import org.dasein.cloud.InternalException;
+import org.dasein.cloud.Requirement;
 import org.dasein.cloud.aws.AWSCloud;
+import org.dasein.cloud.platform.DatabaseProduct;
 import org.dasein.cloud.platform.RelationalDatabaseCapabilities;
 import org.dasein.cloud.util.NamingConstraints;
 
@@ -56,6 +58,12 @@ public class RDSCapabilities extends AbstractCapabilities<AWSCloud> implements R
     @Override
     public @Nonnull String getProviderTermForSnapshot( Locale locale ) {
         return "snapshot";
+    }
+
+    @Nonnull
+    @Override
+    public Requirement requiresEngineVersion() throws CloudException, InternalException {
+        return Requirement.NONE;
     }
 
     @Override
@@ -126,6 +134,14 @@ public class RDSCapabilities extends AbstractCapabilities<AWSCloud> implements R
     @Override
     public @Nonnull NamingConstraints getRelationalDatabaseNamingConstraints() {
         return NamingConstraints.getAlphaNumeric(1, 63).constrainedBy('-');
+    }
+
+    @Nonnull @Override public NamingConstraints getAdminUsernameNamingConstraints( DatabaseProduct product ) throws CloudException, InternalException {
+        return null;
+    }
+
+    @Nonnull @Override public NamingConstraints getAdminPasswordNamingConstraints( DatabaseProduct product ) throws CloudException, InternalException {
+        return null;
     }
 
 }

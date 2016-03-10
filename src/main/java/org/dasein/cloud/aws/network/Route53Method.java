@@ -33,6 +33,7 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.util.EntityUtils;
 import org.apache.log4j.Logger;
 import org.dasein.cloud.CloudException;
+import org.dasein.cloud.GeneralCloudException;
 import org.dasein.cloud.InternalException;
 import org.dasein.cloud.ProviderContext;
 import org.dasein.cloud.aws.AWSCloud;
@@ -221,7 +222,7 @@ public class Route53Method {
                 }
                 catch( IOException e ) {
                     logger.error("Failed to read response error due to a cloud I/O error: " + e.getMessage());
-                    throw new CloudException(e);
+                    throw new GeneralCloudException(e);
                 }
             }
             finally {
@@ -266,7 +267,7 @@ public class Route53Method {
                                 requestId = id.getFirstChild().getNodeValue().trim();
                             }
                             if( message == null ) {
-                                throw new CloudException("Unable to identify error condition: " + status + "/" + requestId + "/" + code);
+                                throw new GeneralCloudException("Unable to identify error condition: " + status + "/" + requestId + "/" + code);
                             }
                             throw EC2Exception.create(status, requestId, code, message);
                         }
@@ -285,7 +286,7 @@ public class Route53Method {
                 catch( Error ignore ) {
                     // ignore me
                 }
-    		    throw new CloudException(msg);
+    		    throw new GeneralCloudException(msg);
     		}
     		else {
     			if( status == HttpStatus.SC_SERVICE_UNAVAILABLE || status == HttpStatus.SC_INTERNAL_SERVER_ERROR ) {
@@ -300,7 +301,7 @@ public class Route53Method {
                             msg = msg + "Response from server was:\n" + xml;
     					}
     					logger.error(msg);
-    					throw new CloudException(msg);
+    					throw new GeneralCloudException(msg);
     				}
     				else {
     					try { Thread.sleep(5000L); }
@@ -342,11 +343,11 @@ public class Route53Method {
                         requestId = id.getFirstChild().getNodeValue().trim();
                     }
                     if( message == null ) {
-                        throw new CloudException("Unable to identify error condition: " + status + "/" + requestId + "/" + code);
+                        throw new GeneralCloudException("Unable to identify error condition: " + status + "/" + requestId + "/" + code);
                     }
                     throw EC2Exception.create(status, requestId, code, message);
                 }
-                throw new CloudException("Unable to parse error.");
+                throw new GeneralCloudException("Unable to parse error.");
     		}
         }
         finally {
@@ -363,13 +364,13 @@ public class Route53Method {
             return XMLParser.parse(new ByteArrayInputStream(responseBody.getBytes("UTF-8")));
 	    }
 	    catch( IOException e ) {
-	        throw new CloudException(e);
+	        throw new GeneralCloudException(e);
 	    }
 	    catch( ParserConfigurationException e ) {
-            throw new CloudException(e);
+            throw new GeneralCloudException(e);
         }
         catch( SAXException e ) {
-            throw new CloudException(e);
+            throw new GeneralCloudException(e);
         }   
 	}
 	
@@ -389,7 +390,7 @@ public class Route53Method {
 			return parseResponse(sb.toString(), debug);
 		}
 		catch( IOException e ) {
-			throw new CloudException(e);
+			throw new GeneralCloudException(e);
 		}			
 	}
 	

@@ -128,7 +128,7 @@ public class Glacier extends AbstractBlobStoreSupport<AWSCloud> implements Offli
 
             String regionId = getContext().getRegionId();
             if( regionId == null ) {
-                throw new CloudException("No region was set for this request");
+                throw new InternalException("No region was set for this request");
             }
 
             try {
@@ -146,7 +146,7 @@ public class Glacier extends AbstractBlobStoreSupport<AWSCloud> implements Offli
                 }
                 throw e;
             } catch (JSONException e) {
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
         }
         finally {
@@ -181,7 +181,7 @@ public class Glacier extends AbstractBlobStoreSupport<AWSCloud> implements Offli
             final String regionId = getContext().getRegionId();
 
             if( regionId == null ) {
-                throw new CloudException("No region ID was specified");
+                throw new InternalException("No region ID was specified");
             }
             try {
                 GlacierMethod method = GlacierMethod.build(getProvider(), GlacierAction.LIST_VAULTS).toMethod();
@@ -203,7 +203,7 @@ public class Glacier extends AbstractBlobStoreSupport<AWSCloud> implements Offli
         final String regionId = getContext().getRegionId();
 
         if( regionId == null ) {
-            throw new CloudException("No region ID was specified");
+            throw new InternalException("No region ID was specified");
         }
     	getProvider().hold();
     	populator = new PopulatorThread<Blob>(new JiteratorPopulator<Blob>() {
@@ -239,7 +239,7 @@ public class Glacier extends AbstractBlobStoreSupport<AWSCloud> implements Offli
 
         boolean needQuery = true;
         String marker = null;
-        Map<String, String> queryParameters = new HashMap<String, String>(1);
+        Map<String, String> queryParameters = new HashMap<>(1);
 
         // glacier can paginate results. it returns a "marker" string in the JSON response
         // which indicates you should make another query. The marker string should be passed
@@ -267,7 +267,7 @@ public class Glacier extends AbstractBlobStoreSupport<AWSCloud> implements Offli
                     needQuery = false;
                 }
             } catch (JSONException e) {
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
         }
     }
@@ -410,7 +410,7 @@ public class Glacier extends AbstractBlobStoreSupport<AWSCloud> implements Offli
             String regionId = getContext().getRegionId();
 
             if( regionId == null ) {
-                throw new CloudException("No region was set for this request");
+                throw new InternalException("No region was set for this request");
             }
 
             GlacierMethod method = GlacierMethod.build(getProvider(), GlacierAction.DELETE_VAULT)
@@ -427,12 +427,12 @@ public class Glacier extends AbstractBlobStoreSupport<AWSCloud> implements Offli
         APITrace.begin(getProvider(), "Blob.removeObject");
         try {
             if( bucket == null ) {
-                throw new CloudException("No bucket was specified for this request");
+                throw new InternalException("No bucket was specified for this request");
             }
             String regionId = getContext().getRegionId();
 
             if( regionId == null ) {
-                throw new CloudException("No region was set for this request");
+                throw new InternalException("No region was set for this request");
             }
 
             GlacierMethod method = GlacierMethod.build(getProvider(), GlacierAction.DELETE_ARCHIVE)
@@ -478,10 +478,10 @@ public class Glacier extends AbstractBlobStoreSupport<AWSCloud> implements Offli
         final String regionId = getContext().getRegionId();
 
         if( regionId == null ) {
-            throw new CloudException("No region ID was specified"); // TODO: doesn't look like it's needed though
+            throw new InternalException("No region ID was specified"); // TODO: doesn't look like it's needed though
         }
         getProvider().hold();
-        PopulatorThread <OfflineStoreRequest> populator = new PopulatorThread<OfflineStoreRequest>(new JiteratorPopulator<OfflineStoreRequest>() {
+        PopulatorThread <OfflineStoreRequest> populator = new PopulatorThread<>(new JiteratorPopulator<OfflineStoreRequest>() {
             public void populate(@Nonnull Jiterator<OfflineStoreRequest> iterator) throws CloudException, InternalException {
                 try {
                     listRequests(bucket, iterator);
@@ -500,7 +500,7 @@ public class Glacier extends AbstractBlobStoreSupport<AWSCloud> implements Offli
 
             boolean needQuery = true;
             String marker = null;
-            Map<String, String> queryParameters = new HashMap<String, String>(1);
+            Map<String, String> queryParameters = new HashMap<>(1);
 
             // glacier can paginate results. it returns a "marker" string in the JSON response
             // which indicates you should make another query. The marker string should be passed
@@ -527,7 +527,7 @@ public class Glacier extends AbstractBlobStoreSupport<AWSCloud> implements Offli
                         needQuery = false;
                     }
                 } catch (JSONException e) {
-                    throw new CloudException(e);
+                    throw new GeneralCloudException(e);
                 }
             }
         }
@@ -550,7 +550,7 @@ public class Glacier extends AbstractBlobStoreSupport<AWSCloud> implements Offli
         OfflineStoreRequestAction action = OfflineStoreRequestAction.UNKNOWN;
         String sizeKey = null;
         if (actionDescription == null) {
-            throw new CloudException("invalid glacier job action");
+            throw new GeneralCloudException("invalid glacier job action");
         }
         else if (actionDescription.equalsIgnoreCase(ACTION_ARCHIVE_RETRIEVAL)) {
             action = OfflineStoreRequestAction.DOWNLOAD;
@@ -588,7 +588,7 @@ public class Glacier extends AbstractBlobStoreSupport<AWSCloud> implements Offli
     private static OfflineStoreRequestStatus parseRequestStatus(String statusCode) throws CloudException {
         OfflineStoreRequestStatus requestStatus;
         if (statusCode == null) {
-            throw new CloudException("invalid glacier job status");
+            throw new GeneralCloudException("invalid glacier job status");
         }
         else if (statusCode.equalsIgnoreCase("Succeeded")) {
             requestStatus = OfflineStoreRequestStatus.SUCCEEDED;
@@ -600,7 +600,7 @@ public class Glacier extends AbstractBlobStoreSupport<AWSCloud> implements Offli
             requestStatus = OfflineStoreRequestStatus.FAILED;
         }
         else {
-            throw new CloudException("invalid glacier job status: " + statusCode);
+            throw new GeneralCloudException("invalid glacier job status: " + statusCode);
         }
         return requestStatus;
     }
@@ -624,7 +624,7 @@ public class Glacier extends AbstractBlobStoreSupport<AWSCloud> implements Offli
                 }
                 throw e;
             } catch (JSONException e) {
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
         }
         finally {
@@ -647,7 +647,7 @@ public class Glacier extends AbstractBlobStoreSupport<AWSCloud> implements Offli
 
                 Map<String,String> responseHeaders = method.invokeHeaders();
                 if (!responseHeaders.containsKey(HEADER_JOB_ID)) {
-                    throw new CloudException("Glacier response missing " + HEADER_JOB_ID + " header");
+                    throw new GeneralCloudException("Glacier response missing " + HEADER_JOB_ID + " header");
                 }
                 String jobId = responseHeaders.get(HEADER_JOB_ID);
 
@@ -656,7 +656,7 @@ public class Glacier extends AbstractBlobStoreSupport<AWSCloud> implements Offli
                         System.currentTimeMillis(), -1);
 
             } catch (JSONException e) {
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
         }
         finally {
@@ -684,7 +684,7 @@ public class Glacier extends AbstractBlobStoreSupport<AWSCloud> implements Offli
         final String regionId = getContext().getRegionId();
 
         if( regionId == null ) {
-            throw new CloudException("No region ID was specified");
+            throw new InternalException("No region ID was specified");
         }
         APITrace.begin(getProvider(), "Blob.getListRequestResult");
         try {
@@ -704,7 +704,7 @@ public class Glacier extends AbstractBlobStoreSupport<AWSCloud> implements Offli
                 return blobs;
 
             } catch (JSONException e) {
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
         }
         finally {

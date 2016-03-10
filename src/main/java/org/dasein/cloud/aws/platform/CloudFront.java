@@ -30,10 +30,7 @@ import javax.annotation.Nullable;
 
 import org.apache.http.HttpStatus;
 import org.apache.log4j.Logger;
-import org.dasein.cloud.CloudException;
-import org.dasein.cloud.InternalException;
-import org.dasein.cloud.ProviderContext;
-import org.dasein.cloud.ResourceStatus;
+import org.dasein.cloud.*;
 import org.dasein.cloud.aws.AWSCloud;
 import org.dasein.cloud.aws.platform.CloudFrontMethod.CloudFrontResponse;
 import org.dasein.cloud.identity.ServiceAction;
@@ -61,16 +58,16 @@ public class CloudFront implements CDNSupport {
             ProviderContext ctx = provider.getContext();
 
             if( ctx == null ) {
-                throw new CloudException("No context was established for this request");
+                throw new InternalException("No context was established for this request");
             }
             CloudFrontResponse response;
             CloudFrontMethod method;
             NodeList blocks;
 
-            provider.getStorageServices().getBlobStoreSupport().makePublic(bucket);
-            for( Blob file : provider.getStorageServices().getBlobStoreSupport().list(bucket) ) {
+            provider.getStorageServices().getOnlineStorageSupport().makePublic(bucket);
+            for( Blob file : provider.getStorageServices().getOnlineStorageSupport().list(bucket) ) {
                 if( !file.isContainer() ) {
-                    provider.getStorageServices().getBlobStoreSupport().makePublic(file.getBucketName(), file.getObjectName());
+                    provider.getStorageServices().getOnlineStorageSupport().makePublic(file.getBucketName(), file.getObjectName());
                 }
             }
             method = new CloudFrontMethod(provider, CloudFrontAction.CREATE_DISTRIBUTION, null, toConfigXml(bucket, name, null, null, null, active, cnames));
@@ -79,7 +76,7 @@ public class CloudFront implements CDNSupport {
             }
             catch( CloudFrontException e ) {
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             blocks = response.document.getElementsByTagName("Distribution");
             for( int i=0; i<blocks.getLength(); i++ ) {
@@ -93,7 +90,7 @@ public class CloudFront implements CDNSupport {
                     }
                 }
             }
-            throw new CloudException("No CDN distribution was created and no error was reported");
+            throw new GeneralCloudException("No CDN distribution was created and no error was reported");
         }
         finally {
             APITrace.end();
@@ -107,7 +104,7 @@ public class CloudFront implements CDNSupport {
             Distribution distribution = getDistribution(distributionId);
 
             if( distribution == null ) {
-                throw new CloudException("No such distribution: " + distributionId);
+                throw new GeneralCloudException("No such distribution: " + distributionId);
             }
             if( distribution.isActive() ) {
                 String name = distribution.getName();
@@ -146,7 +143,7 @@ public class CloudFront implements CDNSupport {
                     }
                     else {
                         logger.error(e.getSummary());
-                        throw new CloudException(e);
+                        throw new GeneralCloudException(e);
                     }
                 }
             }
@@ -186,7 +183,7 @@ public class CloudFront implements CDNSupport {
             ProviderContext ctx = provider.getContext();
 
             if( ctx == null ) {
-                throw new CloudException("No context was established for this request");
+                throw new InternalException("No context was established for this request");
             }
             CloudFrontMethod method = new CloudFrontMethod(provider, CloudFrontAction.GET_DISTRIBUTION, null, null);
             CloudFrontResponse response;
@@ -202,7 +199,7 @@ public class CloudFront implements CDNSupport {
                     return new Object[] { null, null, null };
                 }
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             blocks = response.document.getElementsByTagName("Distribution");
             for( int i=0; i<blocks.getLength(); i++ ) {
@@ -259,7 +256,7 @@ public class CloudFront implements CDNSupport {
                 if( logger.isDebugEnabled() ) {
                     e.printStackTrace();
                 }
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
         }
         finally {
@@ -281,7 +278,7 @@ public class CloudFront implements CDNSupport {
             }
             catch( CloudFrontException e ) {
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             blocks = response.document.getElementsByTagName("DistributionSummary");
             for( int i=0; i<blocks.getLength(); i++ ) {
@@ -312,7 +309,7 @@ public class CloudFront implements CDNSupport {
             }
             catch( CloudFrontException e ) {
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             blocks = response.document.getElementsByTagName("DistributionSummary");
             for( int i=0; i<blocks.getLength(); i++ ) {
@@ -360,9 +357,9 @@ public class CloudFront implements CDNSupport {
             ProviderContext ctx = provider.getContext();
 
             if( ctx == null ) {
-                throw new CloudException("No context was established for this request");
+                throw new InternalException("No context was established for this request");
             }
-            HashMap<String,String> headers = new HashMap<String,String>();
+            HashMap<String,String> headers = new HashMap<>();
             Object[] distData = getDistributionWithEtag(distributionId);
             Distribution distribution = (Distribution)distData[0];
             String location = (distribution == null ? null : distribution.getLocation());
@@ -382,7 +379,7 @@ public class CloudFront implements CDNSupport {
             }
             catch( CloudFrontException e ) {
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             blocks = response.document.getElementsByTagName("Distribution");
             for( int i=0; i<blocks.getLength(); i++ ) {

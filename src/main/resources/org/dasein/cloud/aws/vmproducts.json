@@ -13,8 +13,10 @@
         "rootVolumeSizeInGb": 160,
         "ramSizeInMb": 1825,
         "generation": "previous",
-        "vt": ["paravirtual", "hvm"],
-        "rdt": ["ebs", "instance"]
+        "customProperties": {
+          "vt": ["paravirtual", "hvm"],
+          "rdt": ["ebs", "instance"]
+        }
       },
       {
         "excludesRegions": ["eu-central-1"],

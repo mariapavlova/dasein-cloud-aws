@@ -29,11 +29,7 @@ import javax.annotation.Nullable;
 
 import org.apache.http.HttpStatus;
 import org.apache.log4j.Logger;
-import org.dasein.cloud.CloudException;
-import org.dasein.cloud.DataFormat;
-import org.dasein.cloud.InternalException;
-import org.dasein.cloud.ProviderContext;
-import org.dasein.cloud.ResourceStatus;
+import org.dasein.cloud.*;
 import org.dasein.cloud.aws.AWSCloud;
 import org.dasein.cloud.aws.compute.EC2Exception;
 import org.dasein.cloud.aws.compute.EC2Method;
@@ -98,7 +94,7 @@ public class SNS implements PushNotificationSupport {
     public String confirmSubscription(String providerTopicId, String token, boolean authenticateUnsubscribe) throws CloudException, InternalException {
         APITrace.begin(provider, "Notifications.confirmSubscription");
         try {
-            Map<String,String> parameters = provider.getStandardSnsParameters(provider.getContext(), CONFIRM_SUBSCRIPTION);
+            Map<String,String> parameters = provider.getStandardSnsParameters(CONFIRM_SUBSCRIPTION);
             EC2Method method;
             NodeList blocks;
             Document doc;
@@ -113,7 +109,7 @@ public class SNS implements PushNotificationSupport {
                 doc = method.invoke();
             }
             catch( EC2Exception e ) {
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             blocks = doc.getElementsByTagName("ConfirmSubscriptionResult");
             for( int i=0; i<blocks.getLength(); i++ ) {
@@ -140,7 +136,7 @@ public class SNS implements PushNotificationSupport {
     public Topic createTopic(String name) throws CloudException, InternalException {
         APITrace.begin(provider, "Notifications.createTopic");
         try {
-            Map<String,String> parameters = provider.getStandardSnsParameters(provider.getContext(), CREATE_TOPIC);
+            Map<String,String> parameters = provider.getStandardSnsParameters(CREATE_TOPIC);
             Topic topic = null;
             EC2Method method;
             NodeList blocks;
@@ -152,7 +148,7 @@ public class SNS implements PushNotificationSupport {
                 doc = method.invoke();
             }
             catch( EC2Exception e ) {
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             blocks = doc.getElementsByTagName("CreateTopicResult");
             for( int i=0; i<blocks.getLength(); i++ ) {
@@ -215,7 +211,7 @@ public class SNS implements PushNotificationSupport {
     public boolean isSubscribed() throws CloudException, InternalException {
         APITrace.begin(provider, "Notifications.isSubscribed");
         try {
-            Map<String,String> parameters = provider.getStandardSnsParameters(provider.getContext(), LIST_TOPICS);
+            Map<String,String> parameters = provider.getStandardSnsParameters(LIST_TOPICS);
             EC2Method method;
 
             method = new EC2Method(SERVICE_ID, provider, parameters);
@@ -236,7 +232,7 @@ public class SNS implements PushNotificationSupport {
                 if( logger.isDebugEnabled() ) {
                     e.printStackTrace();
                 }
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
         }
         finally {
@@ -248,7 +244,7 @@ public class SNS implements PushNotificationSupport {
     public Collection<Subscription> listSubscriptions(String optionalTopicId) throws CloudException, InternalException {
         APITrace.begin(provider, "Notifications.listSubscriptions");
         try {
-            Map<String,String> parameters = provider.getStandardSnsParameters(provider.getContext(), optionalTopicId == null ? LIST_SUBSCRIPTIONS : LIST_SUBSCRIPTIONS_BY_TOPIC);
+            Map<String,String> parameters = provider.getStandardSnsParameters(optionalTopicId == null ? LIST_SUBSCRIPTIONS : LIST_SUBSCRIPTIONS_BY_TOPIC);
             ArrayList<Subscription> list = new ArrayList<Subscription>();
             EC2Method method;
             NodeList blocks;
@@ -262,7 +258,7 @@ public class SNS implements PushNotificationSupport {
                 doc = method.invoke();
             }
             catch( EC2Exception e ) {
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             blocks = doc.getElementsByTagName("Subscriptions");
             for( int i=0; i<blocks.getLength(); i++ ) {
@@ -291,7 +287,7 @@ public class SNS implements PushNotificationSupport {
     public @Nonnull Iterable<ResourceStatus> listTopicStatus() throws CloudException, InternalException {
         APITrace.begin(provider, "Notifications.listTopicStatus");
         try {
-            Map<String,String> parameters = provider.getStandardSnsParameters(provider.getContext(), LIST_TOPICS);
+            Map<String,String> parameters = provider.getStandardSnsParameters(LIST_TOPICS);
             ArrayList<ResourceStatus> list = new ArrayList<ResourceStatus>();
             EC2Method method;
             NodeList blocks;
@@ -302,7 +298,7 @@ public class SNS implements PushNotificationSupport {
                 doc = method.invoke();
             }
             catch( EC2Exception e ) {
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             blocks = doc.getElementsByTagName("Topics");
             for( int i=0; i<blocks.getLength(); i++ ) {
@@ -331,7 +327,7 @@ public class SNS implements PushNotificationSupport {
     public Collection<Topic> listTopics() throws CloudException, InternalException {
         APITrace.begin(provider, "Notifications.listTopics");
         try {
-            Map<String,String> parameters = provider.getStandardSnsParameters(provider.getContext(), LIST_TOPICS);
+            Map<String,String> parameters = provider.getStandardSnsParameters(LIST_TOPICS);
             ArrayList<Topic> list = new ArrayList<Topic>();
             EC2Method method;
             NodeList blocks;
@@ -342,7 +338,7 @@ public class SNS implements PushNotificationSupport {
                 doc = method.invoke();
             }
             catch( EC2Exception e ) {
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             blocks = doc.getElementsByTagName("Topics");
             for( int i=0; i<blocks.getLength(); i++ ) {
@@ -376,7 +372,7 @@ public class SNS implements PushNotificationSupport {
     public String publish(String providerTopicId, String subject, String message) throws CloudException, InternalException {
         APITrace.begin(provider, "Notifications.publish");
         try {
-            Map<String,String> parameters = provider.getStandardSnsParameters(provider.getContext(), PUBLISH);
+            Map<String,String> parameters = provider.getStandardSnsParameters(PUBLISH);
             EC2Method method;
             NodeList blocks;
             Document doc;
@@ -389,7 +385,7 @@ public class SNS implements PushNotificationSupport {
                 doc = method.invoke();
             }
             catch( EC2Exception e ) {
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             blocks = doc.getElementsByTagName("PublishResult");
             for( int i=0; i<blocks.getLength(); i++ ) {
@@ -416,7 +412,7 @@ public class SNS implements PushNotificationSupport {
     public void removeTopic(String providerTopicId) throws CloudException, InternalException {
         APITrace.begin(provider, "Notifications.removeTopic");
         try {
-            Map<String,String> parameters = provider.getStandardSnsParameters(provider.getContext(), DELETE_TOPIC);
+            Map<String,String> parameters = provider.getStandardSnsParameters(DELETE_TOPIC);
             EC2Method method;
 
             parameters.put("TopicArn", providerTopicId);
@@ -425,7 +421,7 @@ public class SNS implements PushNotificationSupport {
                 method.invoke();
             }
             catch( EC2Exception e ) {
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
         }
         finally {
@@ -457,7 +453,7 @@ public class SNS implements PushNotificationSupport {
     private void setTopicAttribute(Topic topic, final String attributeName, final String attributeValue) throws InternalException, CloudException {
         APITrace.begin(provider, "Notifications.setTopicAttributes");
         try {
-            Map<String,String> parameters = provider.getStandardSnsParameters(provider.getContext(), SET_TOPIC_ATTRIBUTES);
+            Map<String,String> parameters = provider.getStandardSnsParameters(SET_TOPIC_ATTRIBUTES);
             EC2Method method;
 
             parameters.put("TopicArn", topic.getProviderTopicId());
@@ -469,7 +465,7 @@ public class SNS implements PushNotificationSupport {
                 method.invoke();
             }
             catch( EC2Exception e ) {
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
         }
         finally {
@@ -481,7 +477,7 @@ public class SNS implements PushNotificationSupport {
         ProviderContext ctx = provider.getContext();
 
         if( ctx == null ) {
-            throw new CloudException("No context was set for this request");
+            throw new InternalException("No context was set for this request");
         }
         APITrace.begin(provider, "Notifications.getTopicAttributes");
         try {
@@ -489,7 +485,7 @@ public class SNS implements PushNotificationSupport {
             topic.setProviderOwnerId(ctx.getAccountNumber());
             topic.setActive(true);
 
-            Map<String,String> parameters = provider.getStandardSnsParameters(provider.getContext(), GET_TOPIC_ATTRIBUTES);
+            Map<String,String> parameters = provider.getStandardSnsParameters(GET_TOPIC_ATTRIBUTES);
             EC2Method method;
             NodeList blocks;
             Document doc;
@@ -500,7 +496,7 @@ public class SNS implements PushNotificationSupport {
                 doc = method.invoke();
             }
             catch( EC2Exception e ) {
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             blocks = doc.getElementsByTagName("Attributes");
             for( int i=0; i<blocks.getLength(); i++ ) {
@@ -568,7 +564,7 @@ public class SNS implements PushNotificationSupport {
     public void subscribe(String providerTopicId, EndpointType endpointType, DataFormat dataFormat, String endpoint) throws CloudException, InternalException {
         APITrace.begin(provider, "Notifications.subscribe");
         try {
-            Map<String,String> parameters = provider.getStandardSnsParameters(provider.getContext(), SUBSCRIBE);
+            Map<String,String> parameters = provider.getStandardSnsParameters(SUBSCRIBE);
             EC2Method method;
 
             parameters.put("TopicArn", providerTopicId);
@@ -600,7 +596,7 @@ public class SNS implements PushNotificationSupport {
                 method.invoke();
             }
             catch( EC2Exception e ) {
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
         }
         finally {
@@ -725,7 +721,7 @@ public class SNS implements PushNotificationSupport {
     public void unsubscribe(String providerSubscriptionId) throws CloudException, InternalException {
         APITrace.begin(provider, "Notifications.unsubscribe");
         try {
-            Map<String,String> parameters = provider.getStandardSnsParameters(provider.getContext(), UNSUBSCRIBE);
+            Map<String,String> parameters = provider.getStandardSnsParameters(UNSUBSCRIBE);
             EC2Method method;
 
             parameters.put("SubscriptionArn", providerSubscriptionId);
@@ -734,7 +730,7 @@ public class SNS implements PushNotificationSupport {
                 method.invoke();
             }
             catch( EC2Exception e ) {
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
         }
         finally {

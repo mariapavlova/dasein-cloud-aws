@@ -28,10 +28,7 @@ import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.util.EntityUtils;
 import org.apache.log4j.Logger;
-import org.dasein.cloud.CloudErrorType;
-import org.dasein.cloud.CloudException;
-import org.dasein.cloud.InternalException;
-import org.dasein.cloud.OperationNotSupportedException;
+import org.dasein.cloud.*;
 import org.dasein.cloud.aws.AWSCloud;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -108,7 +105,7 @@ public class GlacierMethod {
             clientAndResponse = invokeInternal();
             Header contentType = clientAndResponse.response.getFirstHeader("content-type");
             if (!"application/json".equalsIgnoreCase(contentType.getValue())) {
-                throw new CloudException("Invalid Glacier response: expected JSON");
+                throw new GeneralCloudException("Invalid Glacier response: expected JSON");
             }
             final HttpEntity entity = clientAndResponse.response.getEntity();
             content = EntityUtils.toString(entity);
@@ -118,9 +115,9 @@ public class GlacierMethod {
             return new JSONObject(content);
 
         } catch (IOException e) {
-            throw new CloudException(e);
+            throw new GeneralCloudException(e);
         } catch (JSONException e) {
-            throw new CloudException(e);
+            throw new GeneralCloudException(e);
         } finally {
             if (clientAndResponse != null) {
                 clientAndResponse.client.getConnectionManager().shutdown();
@@ -223,7 +220,7 @@ public class GlacierMethod {
             try {
                 httpResponse = client.execute(method);
             } catch (IOException e) {
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             if( wire.isDebugEnabled() ) {
                 wire.debug(httpResponse.getStatusLine().toString());

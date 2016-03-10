@@ -84,15 +84,10 @@ public class AMI extends AbstractImageSupport<AWSCloud> {
 
     @Override
     protected MachineImage capture(@Nonnull ImageCreateOptions options, @Nullable AsynchronousTask<MachineImage> task) throws CloudException, InternalException {
-        ProviderContext ctx = getProvider(). getContext();
-
-        if( ctx == null ) {
-            throw new CloudException("No context was set for this request");
-        }
-        return captureImage(ctx, options, task);
+        return captureImage(options, task);
     }
     
-    private @Nonnull MachineImage captureImage(@Nonnull ProviderContext ctx, @Nonnull ImageCreateOptions options, @Nullable AsynchronousTask<MachineImage> task) throws CloudException, InternalException {
+    private @Nonnull MachineImage captureImage(@Nonnull ImageCreateOptions options, @Nullable AsynchronousTask<MachineImage> task) throws CloudException, InternalException {
         APITrace.begin(getProvider(), "captureImage");
         try {
             if( task != null ) {
@@ -105,7 +100,7 @@ public class AMI extends AbstractImageSupport<AWSCloud> {
             while( timeout > System.currentTimeMillis() ) {
                 try {
                     //noinspection ConstantConditions
-                    vm = getProvider(). getComputeServices().getVirtualMachineSupport().getVirtualMachine(options.getVirtualMachineId());
+                    vm = getProvider().getComputeServices().getVirtualMachineSupport().getVirtualMachine(options.getVirtualMachineId());
                     if( vm == null || VmState.TERMINATED.equals(vm.getCurrentState()) ) {
                         break;
                     }
@@ -116,11 +111,11 @@ public class AMI extends AbstractImageSupport<AWSCloud> {
                     
                     if( !vm.isPersistent() ) {
                     	if( vm.getPlatform().isWindows() ) {
-                           	String bucket = getProvider(). getStorageServices().getOnlineStorageSupport().createBucket("dsnwin" + (System.currentTimeMillis() % 10000), true).getBucketName();
+                           	String bucket = getProvider().getStorageServices().getOnlineStorageSupport().createBucket("dsnwin" + (System.currentTimeMillis() % 10000), true).getBucketName();
                             if( bucket == null ) {
-                                throw new CloudException("There is no bucket");
+                                throw new GeneralCloudException("There is no bucket");
                             }
-                            return captureWindows(getProvider(). getContext(), options, bucket, task);
+                            return captureWindows(options, bucket, task);
                         }
                     }
 
@@ -132,13 +127,13 @@ public class AMI extends AbstractImageSupport<AWSCloud> {
                 catch( InterruptedException ignore ) { }
             }
             if( vm == null ) {
-                throw new CloudException("No such virtual machine: " + options.getVirtualMachineId());
+                throw new GeneralCloudException("No such virtual machine: " + options.getVirtualMachineId());
             }
             String lastMessage = null;
             int attempts = 5;
 
             while( attempts > 0 ) {
-                Map<String,String> parameters = getProvider(). getStandardParameters(getProvider(). getContext(), EC2Method.CREATE_IMAGE);
+                Map<String,String> parameters = getProvider().getStandardParameters(EC2Method.CREATE_IMAGE);
                 NodeList blocks;
                 EC2Method method;
                 Document doc;
@@ -163,7 +158,7 @@ public class AMI extends AbstractImageSupport<AWSCloud> {
                 }
                 catch( EC2Exception e ) {
                     logger.error(e.getSummary());
-                    throw new CloudException(e);
+                    throw new GeneralCloudException(e);
                 }
                 blocks = doc.getElementsByTagName("imageId");
                 if( blocks.getLength() > 0 ) {
@@ -181,7 +176,7 @@ public class AMI extends AbstractImageSupport<AWSCloud> {
                             }
                         }
                         if( img == null ) {
-                            throw new CloudException("No image exists for " + id + " as created during the capture process");
+                            throw new GeneralCloudException("No image exists for " + id + " as created during the capture process");
                         }
                     }
                     if( MachineImageState.DELETED.equals(img.getCurrentState()) ) {
@@ -195,12 +190,12 @@ public class AMI extends AbstractImageSupport<AWSCloud> {
                                 catch( InterruptedException ignore ) { }
                                 continue;
                             }
-                            throw new CloudException(errorMessage);
+                            throw new GeneralCloudException(errorMessage);
                         }
                     }
                     
                     // Add tags
-                    List<Tag> tags = new ArrayList<Tag>();
+                    List<Tag> tags = new ArrayList<>();
                     Map<String, Object> meta = options.getMetaData();
                     meta.put("Name", options.getName());
                     meta.put("Description", options.getDescription());
@@ -212,22 +207,22 @@ public class AMI extends AbstractImageSupport<AWSCloud> {
                     }     
                     return img;
                 }
-                throw new CloudException("No error occurred during imaging, but no machine image was specified");
+                throw new GeneralCloudException("No error occurred during imaging, but no machine image was specified");
             }
             if( lastMessage == null ) {
                 lastMessage = "Unknown error";
             }
-            throw new CloudException(lastMessage);
+            throw new GeneralCloudException(lastMessage);
         }
         finally {
             APITrace.end();
         }
     }
 
-    private MachineImage captureWindows(@Nonnull ProviderContext ctx, @Nonnull ImageCreateOptions options, @Nonnull String bucket, @Nullable AsynchronousTask<MachineImage> task) throws CloudException, InternalException {
+    private MachineImage captureWindows(@Nonnull ImageCreateOptions options, @Nonnull String bucket, @Nullable AsynchronousTask<MachineImage> task) throws CloudException, InternalException {
         APITrace.begin(getProvider(), "Image.captureWindows");
         try {
-            Map<String,String> parameters = getProvider(). getStandardParameters(getProvider(). getContext(), EC2Method.BUNDLE_INSTANCE);
+            Map<String,String> parameters = getProvider().getStandardParameters(EC2Method.BUNDLE_INSTANCE);
             StringBuilder uploadPolicy = new StringBuilder();
             NodeList blocks;
             EC2Method method;
@@ -267,26 +262,26 @@ public class AMI extends AbstractImageSupport<AWSCloud> {
             parameters.put("InstanceId", options.getVirtualMachineId());
             parameters.put("Storage.S3.Bucket", bucket);
             parameters.put("Storage.S3.Prefix", options.getName());
-            parameters.put("Storage.S3.AWSAccessKeyId", ctx.getAccountNumber());
+            parameters.put("Storage.S3.AWSAccessKeyId", getContext().getAccountNumber());
             parameters.put("Storage.S3.UploadPolicy", base64Policy);
-            parameters.put("Storage.S3.UploadPolicySignature", getProvider(). signUploadPolicy(base64Policy));
+            parameters.put("Storage.S3.UploadPolicySignature", getProvider().signUploadPolicy(base64Policy));
             method = new EC2Method(getProvider(), parameters);
             try {
                 doc = method.invoke();
             }
             catch( EC2Exception e ) {
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             blocks = doc.getElementsByTagName("bundleId");
             if( blocks.getLength() < 1 ) {
-                throw new CloudException("Unable to identify the bundle task ID.");
+                throw new GeneralCloudException("Unable to identify the bundle task ID.");
             }
             String bundleId = blocks.item(0).getFirstChild().getNodeValue();
             String manifest = (bucket + "/" + options.getName() + ".manifest.xml");
 
             if( task == null ) {
-                task = new AsynchronousTask<MachineImage>();
+                task = new AsynchronousTask<>();
                 task.setStartTime(System.currentTimeMillis());
             }
             waitForBundle(bundleId, manifest, options.getPlatform(), options.getName(), options.getDescription(), task);
@@ -305,7 +300,7 @@ public class AMI extends AbstractImageSupport<AWSCloud> {
             MachineImage img = task.getResult();
 
             if( img == null ) {
-                throw new CloudException("No image was created, but no error was given");
+                throw new GeneralCloudException("No image was created, but no error was given");
             }
             return img;
         }
@@ -323,24 +318,19 @@ public class AMI extends AbstractImageSupport<AWSCloud> {
              * 1. Connect to target region using the same account
              * 2. Invoke EC2 'copyImage' method in the context of target region
              */
-            final ProviderContext ctx = getProvider(). getContext();
-            if( ctx == null ) {
-                throw new CloudException( "Provider context is necessary for this request" );
-            }
-            final String sourceRegionId = ctx.getRegionId();
+            final String sourceRegionId = getContext().getRegionId();
             final String targetRegionId = options.getTargetRegionId();
 
-            final ProviderContext targetContext = ctx.copy(targetRegionId);
+            final ProviderContext targetContext = getContext().copy(targetRegionId);
             targetProvider = ( AWSCloud ) targetContext.connect();
             if ( targetProvider.testContext() == null ) {
-                throw new CloudException( "Could not connect with the same account to the copy target region: " +
+                throw new GeneralCloudException( "Could not connect with the same account to the copy target region: " +
                                                   targetRegionId );
             }
 
             // Invoke the EC2 method
-            Map<String,String> parameters = targetProvider.getStandardParameters(
-                    targetProvider.getContext(), EC2Method.COPY_IMAGE);
-
+            Map<String,String> parameters = targetProvider.getStandardParameters(EC2Method.COPY_IMAGE);
+            
             parameters.put( "SourceRegion", sourceRegionId );
             parameters.put( "SourceImageId", options.getProviderImageId() );
             if (options.getName() != null) {
@@ -357,14 +347,14 @@ public class AMI extends AbstractImageSupport<AWSCloud> {
             }
             catch( EC2Exception e ) {
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             NodeList blocks = doc.getElementsByTagName( "imageId" );
             if( blocks.getLength() > 0 ) {
                 Node imageIdNode = blocks.item(0);
                 return imageIdNode.getFirstChild().getNodeValue().trim();
             }
-            throw new CloudException( "No error occurred during imaging, but no machine image was specified" );
+            throw new GeneralCloudException( "No error occurred during imaging, but no machine image was specified" );
         }
         finally {
             if ( targetProvider != null ) {
@@ -377,14 +367,9 @@ public class AMI extends AbstractImageSupport<AWSCloud> {
     private @Nonnull Iterable<MachineImage> executeImageSearch(int pass, boolean forPublic, @Nonnull ImageFilterOptions options) throws CloudException, InternalException {
         APITrace.begin(getProvider(), "Image.executeImageSearch");
         try {
-            final ProviderContext ctx = getProvider(). getContext();
-
-            if( ctx == null ) {
-                throw new CloudException("No context was set for this request");
-            }
-            final String regionId = ctx.getRegionId();
+            final String regionId = getContext().getRegionId();
             if( regionId == null ) {
-                throw new CloudException("No region was set for this request");
+                throw new InternalException("No region was set for this request");
             }
 
             Architecture architecture = options.getArchitecture();
@@ -394,9 +379,9 @@ public class AMI extends AbstractImageSupport<AWSCloud> {
                     return Collections.emptyList();
                 }
             }
-            Map<String,String> parameters = getProvider(). getStandardParameters(getProvider(). getContext(), EC2Method.DESCRIBE_IMAGES);
+            Map<String,String> parameters = getProvider().getStandardParameters(EC2Method.DESCRIBE_IMAGES);
 
-            final List<MachineImage> list = new ArrayList<MachineImage>();
+            final List<MachineImage> list = new ArrayList<>();
 
             if( forPublic ) {
                 if( pass == 1 ) {
@@ -420,14 +405,14 @@ public class AMI extends AbstractImageSupport<AWSCloud> {
             try {
                 method.invoke(
                         new DescribeImagesResponseParser(
-                                getProvider(). getContext().getRegionId(),
-                                (getProvider(). getEC2Provider().isAWS() ? null : getProvider(). getContext().getAccountNumber()),
+                                getContext().getRegionId(),
+                                (getProvider().getEC2Provider().isAWS() ? null : getContext().getAccountNumber()),
                                 finalOptions,
                                 list));
             }
             catch( EC2Exception e ) {
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             return list;
         }
@@ -440,13 +425,8 @@ public class AMI extends AbstractImageSupport<AWSCloud> {
     public @Nullable MachineImage getImage(@Nonnull String providerImageId) throws CloudException, InternalException {
         APITrace.begin(getProvider(), "Image.getImage");
         try {
-            ProviderContext ctx = getProvider(). getContext();
-
-            if( ctx == null ) {
-                throw new CloudException("No context was set for this request");
-            }
-            if( getProvider(). getEC2Provider().isAWS() ) {
-                Map<String,String> parameters = getProvider(). getStandardParameters(ctx, EC2Method.DESCRIBE_IMAGES);
+            if( getProvider().getEC2Provider().isAWS() ) {
+                Map<String,String> parameters = getProvider().getStandardParameters(EC2Method.DESCRIBE_IMAGES);
                 NodeList blocks;
                 EC2Method method;
                 Document doc;
@@ -463,7 +443,7 @@ public class AMI extends AbstractImageSupport<AWSCloud> {
                         return null;
                     }
                     logger.error(e.getSummary());
-                    throw new CloudException(e);
+                    throw new GeneralCloudException(e);
                 }
                 blocks = doc.getElementsByTagName("imagesSet");
                 for( int i=0; i<blocks.getLength(); i++ ) {
@@ -530,8 +510,8 @@ public class AMI extends AbstractImageSupport<AWSCloud> {
     public boolean isSubscribed() throws CloudException, InternalException {
         APITrace.begin(getProvider(), "Image.isSubscribed");
         try {
-            Map<String,String> parameters = getProvider(). getStandardParameters(getContext(), EC2Method.DESCRIBE_IMAGES);
-            if( getProvider(). getEC2Provider().isAWS() ) {
+            Map<String,String> parameters = getProvider().getStandardParameters(EC2Method.DESCRIBE_IMAGES);
+            if( getProvider().getEC2Provider().isAWS() ) {
                 parameters.put("Owner", getContext().getAccountNumber());
             }
             EC2Method method = new EC2Method(getProvider(), parameters);
@@ -549,7 +529,7 @@ public class AMI extends AbstractImageSupport<AWSCloud> {
                 if( logger.isDebugEnabled() ) {
                     e.printStackTrace();
                 }
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
         }
         finally {
@@ -558,14 +538,14 @@ public class AMI extends AbstractImageSupport<AWSCloud> {
     }
 
     public @Nonnull Iterable<ResourceStatus> listImageStatus(final @Nonnull ImageClass cls) throws CloudException, InternalException {
-            getProvider(). hold();
-            PopulatorThread<ResourceStatus> populator = new PopulatorThread<ResourceStatus>(new JiteratorPopulator<ResourceStatus>() {
+            getProvider().hold();
+            PopulatorThread<ResourceStatus> populator = new PopulatorThread<>(new JiteratorPopulator<ResourceStatus>() {
                 @Override
                 public void populate(@Nonnull Jiterator<ResourceStatus> iterator) throws Exception {
                     APITrace.begin(getProvider(), "Image.listImageStatus");
                     try {
                         try {
-                            TreeSet<String> ids = new TreeSet<String>();
+                            TreeSet<String> ids = new TreeSet<>();
 
                             for( ResourceStatus status : executeStatusList(1, cls) ) {
                                 ids.add(status.getProviderResourceId());
@@ -578,7 +558,7 @@ public class AMI extends AbstractImageSupport<AWSCloud> {
                             }
                         }
                         finally {
-                            getProvider(). release();
+                            getProvider().release();
                         }
                     }
                     finally {
@@ -595,24 +575,18 @@ public class AMI extends AbstractImageSupport<AWSCloud> {
     private @Nonnull Iterable<ResourceStatus> executeStatusList(int pass, @Nonnull ImageClass cls) throws CloudException, InternalException {
         APITrace.begin(getProvider(), "Image.executeStatusList");
         try {
-            ProviderContext ctx = getProvider(). getContext();
-
-            if( ctx == null ) {
-                throw new CloudException("No context was set for this request");
-            }
-
-            Map<String,String> parameters = getProvider(). getStandardParameters(getProvider(). getContext(), EC2Method.DESCRIBE_IMAGES);
-            ArrayList<ResourceStatus> list = new ArrayList<ResourceStatus>();
+            Map<String,String> parameters = getProvider().getStandardParameters(EC2Method.DESCRIBE_IMAGES);
+            ArrayList<ResourceStatus> list = new ArrayList<>();
             EC2Method method;
             NodeList blocks;
             Document doc;
 
-            String accountNumber = ctx.getAccountNumber();
+            String accountNumber = getContext().getAccountNumber();
 
             if( pass ==  1 ) {
                 parameters.put("ExecutableBy.1", "self");
             }
-            else if( getProvider(). getEC2Provider().isAWS() ) {
+            else if( getProvider().getEC2Provider().isAWS() ) {
                 parameters.put("Owner", "self");
             }
 
@@ -631,7 +605,7 @@ public class AMI extends AbstractImageSupport<AWSCloud> {
             }
             catch( EC2Exception e ) {
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             blocks = doc.getElementsByTagName("imagesSet");
             for( int i=0; i<blocks.getLength(); i++ ) {
@@ -649,8 +623,8 @@ public class AMI extends AbstractImageSupport<AWSCloud> {
                     }
                 }
             }
-            if( getProvider(). getEC2Provider().isAWS() ) {
-                parameters = getProvider(). getStandardParameters(getProvider(). getContext(), EC2Method.DESCRIBE_IMAGES);
+            if( getProvider().getEC2Provider().isAWS() ) {
+                parameters = getProvider().getStandardParameters(EC2Method.DESCRIBE_IMAGES);
                 parameters.put("ExecutableBy", accountNumber);
                 parameters.put("Filter.1.Name", "image-type");
                 parameters.put("Filter.1.Value", t);
@@ -660,7 +634,7 @@ public class AMI extends AbstractImageSupport<AWSCloud> {
                 }
                 catch( EC2Exception e ) {
                     logger.error(e.getSummary());
-                    throw new CloudException(e);
+                    throw new GeneralCloudException(e);
                 }
                 blocks = doc.getElementsByTagName("imagesSet");
                 for( int i=0; i<blocks.getLength(); i++ ) {
@@ -739,7 +713,7 @@ public class AMI extends AbstractImageSupport<AWSCloud> {
 
         Map<String, String> extraParameters = new HashMap<String, String>();
 
-        AWSCloud.addExtraParameters( extraParameters, getProvider(). getTagFilterParams( options.getTags(), filter ) );
+        AWSCloud.addExtraParameters( extraParameters, getProvider().getTagFilterParams( options.getTags(), filter ) );
         parameters.putAll(extraParameters);
         String regex = options.getRegex();
 
@@ -801,7 +775,7 @@ public class AMI extends AbstractImageSupport<AWSCloud> {
 	private void populateImages(@Nonnull ProviderContext ctx, @Nullable String accountNumber, @Nonnull Jiterator<MachineImage> iterator, Map<String,String> extraParameters) throws CloudException, InternalException {
         APITrace.begin(getProvider(), "populateImages");
         try {
-            Map<String,String> parameters = getProvider(). getStandardParameters(getProvider(). getContext(), EC2Method.DESCRIBE_IMAGES);
+            Map<String,String> parameters = getProvider().getStandardParameters(getProvider().getContext(), EC2Method.DESCRIBE_IMAGES);
             EC2Method method;
             NodeList blocks;
             Document doc;
@@ -809,11 +783,11 @@ public class AMI extends AbstractImageSupport<AWSCloud> {
             if( accountNumber == null ) {
                 accountNumber = ctx.getAccountNumber();
             }
-            if( getProvider(). getEC2Provider().isAWS() ) {
+            if( getProvider().getEC2Provider().isAWS() ) {
                 parameters.put("Owner", accountNumber);
             }
 
-            getProvider(). putExtraParameters( parameters, extraParameters );
+            getProvider().putExtraParameters( parameters, extraParameters );
 
             method = new EC2Method(getProvider(), parameters);
             try {
@@ -839,10 +813,10 @@ public class AMI extends AbstractImageSupport<AWSCloud> {
                     }
                 }
             }
-            if( getProvider(). getEC2Provider().isAWS() ) {
-                parameters = getProvider(). getStandardParameters(getProvider(). getContext(), EC2Method.DESCRIBE_IMAGES);
+            if( getProvider().getEC2Provider().isAWS() ) {
+                parameters = getProvider().getStandardParameters(getProvider().getContext(), EC2Method.DESCRIBE_IMAGES);
                 parameters.put("ExecutableBy", accountNumber);
-                getProvider(). putExtraParameters( parameters, extraParameters );
+                getProvider().putExtraParameters( parameters, extraParameters );
                 method = new EC2Method(getProvider(), parameters);
                 try {
                     doc = method.invoke();
@@ -880,12 +854,12 @@ public class AMI extends AbstractImageSupport<AWSCloud> {
         APITrace.begin(getProvider(), "Image.registerImageBundle");
         try {
             if( !MachineImageFormat.AWS.equals(options.getBundleFormat()) ) {
-                throw new CloudException("Unsupported bundle format: " + options.getBundleFormat());
+                throw new GeneralCloudException("Unsupported bundle format: " + options.getBundleFormat());
             }
             if( options.getBundleLocation() == null ) {
                 throw new OperationNotSupportedException("A valid bundle location in object storage was not provided");
             }
-            Map<String,String> parameters = getProvider(). getStandardParameters(getProvider(). getContext(), EC2Method.REGISTER_IMAGE);
+            Map<String,String> parameters = getProvider().getStandardParameters(EC2Method.REGISTER_IMAGE);
             NodeList blocks;
             EC2Method method;
             Document doc;
@@ -897,7 +871,7 @@ public class AMI extends AbstractImageSupport<AWSCloud> {
             }
             catch( EC2Exception e ) {
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             blocks = doc.getElementsByTagName("imageId");
             if( blocks.getLength() > 0 ) {
@@ -906,11 +880,11 @@ public class AMI extends AbstractImageSupport<AWSCloud> {
                 MachineImage img = getMachineImage(id);
 
                 if( img == null ) {
-                    throw new CloudException("Expected to find newly registered machine image '" + id + "', but none was found");
+                    throw new GeneralCloudException("Expected to find newly registered machine image '" + id + "', but none was found");
                 }
                 return img;
             }
-            throw new CloudException("No machine image was registered, but no error was thrown");
+            throw new GeneralCloudException("No machine image was registered, but no error was thrown");
         }
         finally {
             APITrace.end();
@@ -945,25 +919,25 @@ public class AMI extends AbstractImageSupport<AWSCloud> {
                 }
             }
 
-            Map<String, String> parameters = getProvider(). getStandardParameters( getProvider(). getContext(), EC2Method.DEREGISTER_IMAGE );
+            Map<String, String> parameters = getProvider().getStandardParameters(EC2Method.DEREGISTER_IMAGE);
             NodeList blocks;
             EC2Method method;
             Document doc;
 
             parameters.put( "ImageId", providerImageId );
-            method = new EC2Method( getProvider(), parameters );
+            method = new EC2Method(getProvider(), parameters);
             try {
                 doc = method.invoke();
             } catch ( EC2Exception e ) {
                 logger.error( e.getSummary() );
-                throw new CloudException( e );
+                throw new GeneralCloudException( e );
             }
             blocks = doc.getElementsByTagName( "return" );
             if ( blocks.getLength() > 0 ) {
                 Node imageIdNode = blocks.item( 0 );
 
                 if ( !imageIdNode.getFirstChild().getNodeValue().trim().equals( "true" ) ) {
-                    throw new CloudException( "Failed to de-register image " + providerImageId );
+                    throw new GeneralCloudException( "Failed to de-register image " + providerImageId );
                 }
             }
         }
@@ -1018,8 +992,8 @@ public class AMI extends AbstractImageSupport<AWSCloud> {
         else {
             opts = options;
         }
-        getProvider(). hold();
-        PopulatorThread<MachineImage> populator = new PopulatorThread<MachineImage>(new JiteratorPopulator<MachineImage>() {
+        getProvider().hold();
+        PopulatorThread<MachineImage> populator = new PopulatorThread<>(new JiteratorPopulator<MachineImage>() {
             @Override
             public void populate(@Nonnull Jiterator<MachineImage> iterator) throws Exception {
                 APITrace.begin(getProvider(), "Image.listImages");
@@ -1038,7 +1012,7 @@ public class AMI extends AbstractImageSupport<AWSCloud> {
                         }
                     }
                     finally {
-                        getProvider(). release();
+                        getProvider().release();
                     }
                 }
                 finally {
@@ -1053,8 +1027,8 @@ public class AMI extends AbstractImageSupport<AWSCloud> {
 
     @Override
     public @Nonnull Iterable<MachineImage> searchPublicImages(final @Nonnull ImageFilterOptions options) throws CloudException, InternalException {
-        getProvider(). hold();
-        PopulatorThread<MachineImage> populator = new PopulatorThread<MachineImage>(new JiteratorPopulator<MachineImage>() {
+        getProvider().hold();
+        PopulatorThread<MachineImage> populator = new PopulatorThread<>(new JiteratorPopulator<MachineImage>() {
             @Override
             public void populate(@Nonnull Jiterator<MachineImage> iterator) throws Exception {
                 APITrace.begin(getProvider(), "searchPublicImages");
@@ -1068,7 +1042,7 @@ public class AMI extends AbstractImageSupport<AWSCloud> {
                         }
                     }
                     finally {
-                        getProvider(). release();
+                        getProvider().release();
                     }
                 }
                 finally {
@@ -1092,7 +1066,7 @@ public class AMI extends AbstractImageSupport<AWSCloud> {
                 MachineImage img = getMachineImage(imageId);
 
                 if( img == null ) {
-                    throw new CloudException("The machine image " + imageId + " disappeared while waiting to set sharing");
+                    throw new GeneralCloudException("The machine image " + imageId + " disappeared while waiting to set sharing");
                 }
                 if( MachineImageState.ACTIVE.equals(img.getCurrentState()) ) {
                     break;
@@ -1104,7 +1078,7 @@ public class AMI extends AbstractImageSupport<AWSCloud> {
             try { Thread.sleep(15000L); }
             catch( InterruptedException ignore ) { }
         }
-        Map<String,String> parameters = getProvider(). getStandardParameters(getProvider(). getContext(), EC2Method.MODIFY_IMAGE_ATTRIBUTE);
+        Map<String,String> parameters = getProvider().getStandardParameters(EC2Method.MODIFY_IMAGE_ATTRIBUTE);
         EC2Method method;
         NodeList blocks;
         Document doc;
@@ -1129,12 +1103,12 @@ public class AMI extends AbstractImageSupport<AWSCloud> {
                 return;
             }
             logger.error(e.getSummary());
-            throw new CloudException(e);
+            throw new GeneralCloudException(e);
         }
         blocks = doc.getElementsByTagName("return");
         if( blocks.getLength() > 0 ) {
             if( !blocks.item(0).getFirstChild().getNodeValue().equalsIgnoreCase("true") ) {
-                throw new CloudException("Share of image failed without explanation.");
+                throw new GeneralCloudException("Share of image failed without explanation.");
             }
         }
         timeout = System.currentTimeMillis() + (CalendarWrapper.SECOND * 30);
@@ -1180,7 +1154,7 @@ public class AMI extends AbstractImageSupport<AWSCloud> {
                 MachineImage img = getMachineImage(imageId);
 
                 if( img == null ) {
-                    throw new CloudException("The machine image " + imageId + " disappeared while waiting to set sharing");
+                    throw new GeneralCloudException("The machine image " + imageId + " disappeared while waiting to set sharing");
                 }
                 if( MachineImageState.ACTIVE.equals(img.getCurrentState()) ) {
                     break;
@@ -1192,7 +1166,7 @@ public class AMI extends AbstractImageSupport<AWSCloud> {
             try { Thread.sleep(15000L); }
             catch( InterruptedException ignore ) { }
         }
-        Map<String,String> parameters = getProvider(). getStandardParameters(getProvider(). getContext(), EC2Method.MODIFY_IMAGE_ATTRIBUTE);
+        Map<String,String> parameters = getProvider().getStandardParameters(EC2Method.MODIFY_IMAGE_ATTRIBUTE);
         EC2Method method;
         NodeList blocks;
         Document doc;
@@ -1215,12 +1189,12 @@ public class AMI extends AbstractImageSupport<AWSCloud> {
                 return;
             }
             logger.error(e.getSummary());
-            throw new CloudException(e);
+            throw new GeneralCloudException(e);
         }
         blocks = doc.getElementsByTagName("return");
         if( blocks.getLength() > 0 ) {
             if( !blocks.item(0).getFirstChild().getNodeValue().equalsIgnoreCase("true") ) {
-                throw new CloudException("Share of image failed without explanation.");
+                throw new GeneralCloudException("Share of image failed without explanation.");
             }
         }
         timeout = System.currentTimeMillis() + (CalendarWrapper.SECOND * 30);
@@ -1244,8 +1218,8 @@ public class AMI extends AbstractImageSupport<AWSCloud> {
     }
 
     private @Nonnull List<String> sharesAsList(@Nonnull String forMachineImageId) throws CloudException, InternalException {
-        Map<String,String> parameters = getProvider(). getStandardParameters(getProvider(). getContext(), EC2Method.DESCRIBE_IMAGE_ATTRIBUTE);
-        ArrayList<String> list = new ArrayList<String>();
+        Map<String,String> parameters = getProvider().getStandardParameters(EC2Method.DESCRIBE_IMAGE_ATTRIBUTE);
+        ArrayList<String> list = new ArrayList<>();
         EC2Method method;
         NodeList blocks;
         Document doc;
@@ -1263,7 +1237,7 @@ public class AMI extends AbstractImageSupport<AWSCloud> {
                 return list;
             }
             logger.error(e.getSummary());
-            throw new CloudException(e);
+            throw new GeneralCloudException(e);
         }
         blocks = doc.getElementsByTagName("launchPermission");
         for( int i=0; i<blocks.getLength(); i++ ) {
@@ -1293,31 +1267,6 @@ public class AMI extends AbstractImageSupport<AWSCloud> {
             }
         }
         return list;
-    }
-
-    @Override
-    public boolean supportsCustomImages() {
-        return true;
-    }
-
-    @Override
-    public boolean supportsImageCapture(@Nonnull MachineImageType type) throws CloudException, InternalException {
-        return getCapabilities().supportsImageCapture(type);
-    }
-
-    @Override
-    public boolean supportsImageSharing() throws CloudException, InternalException{
-        return getCapabilities().supportsImageSharing();
-    }
-
-    @Override
-    public boolean supportsImageSharingWithPublic() throws CloudException, InternalException{
-        return getCapabilities().supportsImageSharingWithPublic();
-    }
-
-    @Override
-    public boolean supportsPublicLibrary(@Nonnull ImageClass cls) throws CloudException, InternalException {
-        return getCapabilities().supportsPublicLibrary(cls);
     }
 
     private static class BundleTask {
@@ -1384,15 +1333,10 @@ public class AMI extends AbstractImageSupport<AWSCloud> {
         if( node == null ) {
             return null;
         }
-        ProviderContext ctx = getProvider(). getContext();
-
-        if( ctx == null ) {
-            throw new CloudException("No context was set for this request");
-        }
-        String regionId = ctx.getRegionId();
+        String regionId = getContext().getRegionId();
 
         if( regionId == null ) {
-            throw new CloudException("No region was set for this request");
+            throw new GeneralCloudException("No region was set for this request");
         }
         NodeList attributes = node.getChildNodes();
         MachineImageState state = MachineImageState.PENDING;
@@ -1432,18 +1376,13 @@ public class AMI extends AbstractImageSupport<AWSCloud> {
         if( node == null ) {
             return null;
         }
-        ProviderContext ctx = getProvider(). getContext();
-
-        if( ctx == null ) {
-            throw new CloudException("No context was set for this request");
-        }
-        String regionId = ctx.getRegionId();
+        String regionId = getContext().getRegionId();
 
         if( regionId == null ) {
-            throw new CloudException("No region was set for this request");
+            throw new GeneralCloudException("No region was set for this request");
         }
         NodeList attributes = node.getChildNodes();
-        List<MachineImageVolume> volumes = new ArrayList<MachineImageVolume>();
+        List<MachineImageVolume> volumes = new ArrayList<>();
         String location = null;
         ImageClass imgClass = ImageClass.MACHINE;
         MachineImageState state = null;
@@ -1669,8 +1608,8 @@ public class AMI extends AbstractImageSupport<AWSCloud> {
                 description = createDescription(imgName, arch, platform);
             }
         }
-        if( !getProvider(). getEC2Provider().isAWS() ) {
-            ownerId = ctx.getAccountNumber();
+        if( !getProvider().getEC2Provider().isAWS() ) {
+            ownerId = getContext().getAccountNumber();
         }
         MachineImage image = MachineImage.getInstance(ownerId, regionId, amiId, imgClass, state, imgName, description, arch, platform);
         image.withVolumes(volumes);
@@ -1722,7 +1661,7 @@ public class AMI extends AbstractImageSupport<AWSCloud> {
     public void updateTags(@Nonnull String[] imageIds, @Nonnull Tag... tags) throws CloudException, InternalException {
         APITrace.begin(getProvider(), "Image.updateTags");
         try {
-            getProvider(). createTags(EC2Method.SERVICE_ID, imageIds, tags);
+            getProvider().createTags(EC2Method.SERVICE_ID, imageIds, tags);
         }
         finally {
             APITrace.end();
@@ -1738,7 +1677,7 @@ public class AMI extends AbstractImageSupport<AWSCloud> {
     public void removeTags(@Nonnull String[] imageIds, @Nonnull Tag... tags) throws CloudException, InternalException {
         APITrace.begin(getProvider(), "Image.removeTags");
         try {
-            getProvider(). removeTags(EC2Method.SERVICE_ID, imageIds, tags);
+            getProvider().removeTags(EC2Method.SERVICE_ID, imageIds, tags);
         }
         finally {
             APITrace.end();
@@ -1752,7 +1691,7 @@ public class AMI extends AbstractImageSupport<AWSCloud> {
                 long failurePoint = -1L;
 
                 while( !task.isComplete() ) {
-                    Map<String,String> parameters = getProvider(). getStandardParameters(getProvider(). getContext(), EC2Method.DESCRIBE_BUNDLE_TASKS);
+                    Map<String,String> parameters = getProvider().getStandardParameters(EC2Method.DESCRIBE_BUNDLE_TASKS);
                     NodeList blocks;
                     EC2Method method;
                     Document doc;
@@ -1763,7 +1702,7 @@ public class AMI extends AbstractImageSupport<AWSCloud> {
                         doc = method.invoke();
                     }
                     catch( EC2Exception e ) {
-                        throw new CloudException(e);
+                        throw new GeneralCloudException(e);
                     }
                     blocks = doc.getElementsByTagName("bundleInstanceTasksSet");
                     for( int i=0; i<blocks.getLength(); i++ ) {
@@ -1797,7 +1736,7 @@ public class AMI extends AbstractImageSupport<AWSCloud> {
                                             }
                                         }
                                         if( message != null ) {
-                                            task.complete(new CloudException(message));
+                                            task.complete(new GeneralCloudException(message));
                                         }
                                     }
                                     else if( bt.state.equals("pending") || bt.state.equals("waiting-for-shutdown") ) {

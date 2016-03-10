@@ -22,6 +22,7 @@ package org.dasein.cloud.aws.network;
 import org.apache.http.HttpStatus;
 import org.apache.log4j.Logger;
 import org.dasein.cloud.CloudException;
+import org.dasein.cloud.GeneralCloudException;
 import org.dasein.cloud.InternalException;
 import org.dasein.cloud.ResourceStatus;
 import org.dasein.cloud.aws.AWSCloud;
@@ -50,7 +51,7 @@ public class VPCGateway extends AbstractVpnSupport<AWSCloud> {
     public void attachToVlan(@Nonnull String providerVpnId, @Nonnull String providerVlanId) throws CloudException, InternalException {
         APITrace.begin(getProvider(), "attachVPNToVLAN");
         try {
-            Map<String,String> parameters = getProvider().getStandardParameters(getContext(), ELBMethod.ATTACH_VPN_GATEWAY);
+            Map<String,String> parameters = getProvider().getStandardParameters(ELBMethod.ATTACH_VPN_GATEWAY);
             EC2Method method;
 
             parameters.put("VpcId", providerVlanId);
@@ -61,7 +62,7 @@ public class VPCGateway extends AbstractVpnSupport<AWSCloud> {
             }
             catch( EC2Exception e ) {
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
         }
         finally {
@@ -77,16 +78,16 @@ public class VPCGateway extends AbstractVpnSupport<AWSCloud> {
             Vpn vpn = getVpn(providerVpnId);
 
             if( gateway == null ) {
-                throw new CloudException("No such VPN gateway: " + toGatewayId);
+                throw new GeneralCloudException("No such VPN gateway: " + toGatewayId);
             }
             if( vpn == null ) {
-                throw new CloudException("No such VPN: " + providerVpnId);
+                throw new GeneralCloudException("No such VPN: " + providerVpnId);
             }
             if( !gateway.getProtocol().equals(vpn.getProtocol()) ) {
-                throw new CloudException("VPN protocol mismatch between VPN and gateway: " + vpn.getProtocol() + " vs " + gateway.getProtocol());
+                throw new GeneralCloudException("VPN protocol mismatch between VPN and gateway: " + vpn.getProtocol() + " vs " + gateway.getProtocol());
             }
 
-            Map<String,String> parameters = getProvider().getStandardParameters(getContext(), ELBMethod.CREATE_VPN_CONNECTION);
+            Map<String,String> parameters = getProvider().getStandardParameters(ELBMethod.CREATE_VPN_CONNECTION);
             EC2Method method;
 
             parameters.put("Type", getAWSProtocol(vpn.getProtocol()));
@@ -98,7 +99,7 @@ public class VPCGateway extends AbstractVpnSupport<AWSCloud> {
             }
             catch( EC2Exception e ) {
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
         }
         finally {
@@ -110,7 +111,7 @@ public class VPCGateway extends AbstractVpnSupport<AWSCloud> {
     public @Nonnull Vpn createVpn(@Nonnull VpnCreateOptions vpnLaunchOptions) throws CloudException, InternalException {
         APITrace.begin(getProvider(), "createVPN");
         try {
-            Map<String,String> parameters = getProvider().getStandardParameters(getContext(), ELBMethod.CREATE_VPN_GATEWAY);
+            Map<String,String> parameters = getProvider().getStandardParameters(ELBMethod.CREATE_VPN_GATEWAY);
             EC2Method method;
             NodeList blocks;
             Document doc;
@@ -122,7 +123,7 @@ public class VPCGateway extends AbstractVpnSupport<AWSCloud> {
             }
             catch( EC2Exception e ) {
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             blocks = doc.getElementsByTagName("vpnGateway");
 
@@ -134,7 +135,7 @@ public class VPCGateway extends AbstractVpnSupport<AWSCloud> {
                     return vpn;
                 }
             }
-            throw new CloudException("No VPN was created, but no error was reported");
+            throw new GeneralCloudException("No VPN was created, but no error was reported");
         }
         finally {
             APITrace.end();
@@ -145,7 +146,7 @@ public class VPCGateway extends AbstractVpnSupport<AWSCloud> {
     public @Nonnull VpnGateway createVpnGateway(@Nonnull VpnGatewayCreateOptions opt) throws CloudException, InternalException {
         APITrace.begin(getProvider(), "createVPNGateway");
         try {
-            Map<String,String> parameters = getProvider().getStandardParameters(getContext(), ELBMethod.CREATE_CUSTOMER_GATEWAY);
+            Map<String,String> parameters = getProvider().getStandardParameters(ELBMethod.CREATE_CUSTOMER_GATEWAY);
             EC2Method method;
             NodeList blocks;
             Document doc;
@@ -162,7 +163,7 @@ public class VPCGateway extends AbstractVpnSupport<AWSCloud> {
                 if( logger.isDebugEnabled() ) {
                     logger.debug("createVpnGateway failed", e);
                 }
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             blocks = doc.getElementsByTagName("customerGateway");
 
@@ -174,7 +175,7 @@ public class VPCGateway extends AbstractVpnSupport<AWSCloud> {
                     return gateway;
                 }
             }
-            throw new CloudException("No VPN gateway was created, but no error was reported");
+            throw new GeneralCloudException("No VPN gateway was created, but no error was reported");
         }
         finally {
             APITrace.end();
@@ -185,7 +186,7 @@ public class VPCGateway extends AbstractVpnSupport<AWSCloud> {
     public void deleteVpn(@Nonnull String providerVpnId) throws CloudException, InternalException {
         APITrace.begin(getProvider(), "deleteVPN");
         try {
-            Map<String,String> parameters = getProvider().getStandardParameters(getContext(), ELBMethod.DELETE_VPN_GATEWAY);
+            Map<String,String> parameters = getProvider().getStandardParameters(ELBMethod.DELETE_VPN_GATEWAY);
             EC2Method method;
 
             parameters.put("VpnGatewayId", providerVpnId);
@@ -195,7 +196,7 @@ public class VPCGateway extends AbstractVpnSupport<AWSCloud> {
             }
             catch( EC2Exception e ) {
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
         }
         finally {
@@ -207,7 +208,7 @@ public class VPCGateway extends AbstractVpnSupport<AWSCloud> {
     public void deleteVpnGateway(@Nonnull String gatewayId) throws CloudException, InternalException {
         APITrace.begin(getProvider(), "deleteVPNGateway");
         try {
-            Map<String,String> parameters = getProvider().getStandardParameters(getContext(), ELBMethod.DELETE_CUSTOMER_GATEWAY);
+            Map<String,String> parameters = getProvider().getStandardParameters(ELBMethod.DELETE_CUSTOMER_GATEWAY);
             EC2Method method;
 
             parameters.put("CustomerGatewayId", gatewayId);
@@ -217,7 +218,7 @@ public class VPCGateway extends AbstractVpnSupport<AWSCloud> {
             }
             catch( EC2Exception e ) {
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
         }
         finally {
@@ -229,7 +230,7 @@ public class VPCGateway extends AbstractVpnSupport<AWSCloud> {
     public void detachFromVlan(@Nonnull String providerVpnId, @Nonnull String providerVlanId) throws CloudException, InternalException {
         APITrace.begin(getProvider(), "detachVPNFromVLAN");
         try {
-            Map<String,String> parameters = getProvider().getStandardParameters(getContext(), ELBMethod.DETACH_VPN_GATEWAY);
+            Map<String,String> parameters = getProvider().getStandardParameters(ELBMethod.DETACH_VPN_GATEWAY);
             EC2Method method;
 
             parameters.put("VpcId", providerVlanId);
@@ -240,7 +241,7 @@ public class VPCGateway extends AbstractVpnSupport<AWSCloud> {
             }
             catch( EC2Exception e ) {
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
         }
         finally {
@@ -256,10 +257,10 @@ public class VPCGateway extends AbstractVpnSupport<AWSCloud> {
             Vpn vpn = getVpn(vpnId);
 
             if( gateway == null ) {
-                throw new CloudException("No such VPN gateway: " + gatewayId);
+                throw new GeneralCloudException("No such VPN gateway: " + gatewayId);
             }
             if( vpn == null ) {
-                throw new CloudException("No such VPN: " + vpnId);
+                throw new GeneralCloudException("No such VPN: " + vpnId);
             }
             String connectionId = null;
 
@@ -273,7 +274,7 @@ public class VPCGateway extends AbstractVpnSupport<AWSCloud> {
                 logger.warn("Attempt to disconnect a VPN from a gateway when there was no connection in the cloud");
                 return;
             }
-            Map<String,String> parameters = getProvider().getStandardParameters(getContext(), ELBMethod.DELETE_VPN_CONNECTION);
+            Map<String,String> parameters = getProvider().getStandardParameters(ELBMethod.DELETE_VPN_CONNECTION);
             EC2Method method;
 
             parameters.put("VpnConnectionId", connectionId);
@@ -283,7 +284,7 @@ public class VPCGateway extends AbstractVpnSupport<AWSCloud> {
             }
             catch( EC2Exception e ) {
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
         }
         finally {
@@ -304,7 +305,7 @@ public class VPCGateway extends AbstractVpnSupport<AWSCloud> {
         if( protocol.equals(VpnProtocol.IPSEC1) ) {
             return "ipsec.1";
         }
-        throw new CloudException("AWS does not support " + protocol);
+        throw new GeneralCloudException("AWS does not support " + protocol);
     }
 
     @Override
@@ -340,7 +341,7 @@ public class VPCGateway extends AbstractVpnSupport<AWSCloud> {
     public boolean isSubscribed() throws CloudException, InternalException {
         APITrace.begin(getProvider(), "isSubscribedVPCGateway");
         try {
-            Map<String,String> parameters = getProvider().getStandardParameters(getContext(), ELBMethod.DESCRIBE_CUSTOMER_GATEWAYS);
+            Map<String,String> parameters = getProvider().getStandardParameters(ELBMethod.DESCRIBE_CUSTOMER_GATEWAYS);
             EC2Method method;
 
             method = new EC2Method(getProvider(), parameters);
@@ -358,7 +359,7 @@ public class VPCGateway extends AbstractVpnSupport<AWSCloud> {
                     return false;
                 }
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
         }
         finally {
@@ -374,7 +375,7 @@ public class VPCGateway extends AbstractVpnSupport<AWSCloud> {
     private @Nonnull Iterable<VpnConnection> listConnections(@Nullable String vpnId, @Nullable String gatewayId) throws CloudException, InternalException {
         APITrace.begin(getProvider(), "listVPCConnections");
         try {
-            Map<String,String> parameters = getProvider().getStandardParameters(getContext(), ELBMethod.DESCRIBE_VPN_CONNECTIONS);
+            Map<String,String> parameters = getProvider().getStandardParameters(ELBMethod.DESCRIBE_VPN_CONNECTIONS);
             EC2Method method;
             NodeList blocks;
             Document doc;
@@ -400,7 +401,7 @@ public class VPCGateway extends AbstractVpnSupport<AWSCloud> {
                     }
                 }
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             List<VpnConnection> list = new ArrayList();
 
@@ -425,7 +426,7 @@ public class VPCGateway extends AbstractVpnSupport<AWSCloud> {
     public @Nonnull Iterable<ResourceStatus> listGatewayStatus() throws CloudException, InternalException {
         APITrace.begin(getProvider(), "listVPCGatewayStatus");
         try {
-            Map<String,String> parameters = getProvider().getStandardParameters(getContext(), ELBMethod.DESCRIBE_CUSTOMER_GATEWAYS);
+            Map<String,String> parameters = getProvider().getStandardParameters(ELBMethod.DESCRIBE_CUSTOMER_GATEWAYS);
             EC2Method method;
             NodeList blocks;
             Document doc;
@@ -443,7 +444,7 @@ public class VPCGateway extends AbstractVpnSupport<AWSCloud> {
                     }
                 }
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             List<ResourceStatus> list = new ArrayList();
 
@@ -470,7 +471,7 @@ public class VPCGateway extends AbstractVpnSupport<AWSCloud> {
     private @Nonnull Iterable<VpnGateway> listGateways(@Nullable String gatewayId, @Nullable String bgpAsn) throws CloudException, InternalException {
         APITrace.begin(getProvider(), "listVPCGateways");
         try {
-            Map<String,String> parameters = getProvider().getStandardParameters(getContext(), ELBMethod.DESCRIBE_CUSTOMER_GATEWAYS);
+            Map<String,String> parameters = getProvider().getStandardParameters(ELBMethod.DESCRIBE_CUSTOMER_GATEWAYS);
             EC2Method method;
             NodeList blocks;
             Document doc;
@@ -496,7 +497,7 @@ public class VPCGateway extends AbstractVpnSupport<AWSCloud> {
                     }
                 }
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             List<VpnGateway> list = new ArrayList();
 
@@ -530,7 +531,7 @@ public class VPCGateway extends AbstractVpnSupport<AWSCloud> {
     public @Nonnull Iterable<ResourceStatus> listVpnStatus() throws CloudException, InternalException {
         APITrace.begin(getProvider(), "listVPNStatus");
         try {
-            Map<String,String> parameters = getProvider().getStandardParameters(getContext(), ELBMethod.DESCRIBE_VPN_GATEWAYS);
+            Map<String,String> parameters = getProvider().getStandardParameters(ELBMethod.DESCRIBE_VPN_GATEWAYS);
             EC2Method method;
             NodeList blocks;
             Document doc;
@@ -548,7 +549,7 @@ public class VPCGateway extends AbstractVpnSupport<AWSCloud> {
                     }
                 }
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             List<ResourceStatus> list = new ArrayList();
 
@@ -575,7 +576,7 @@ public class VPCGateway extends AbstractVpnSupport<AWSCloud> {
     private @Nonnull Iterable<Vpn> listVpns(@Nullable String vpnId) throws CloudException, InternalException {
         APITrace.begin(getProvider(), "listVpns");
         try {
-            Map<String,String> parameters = getProvider().getStandardParameters(getContext(), ELBMethod.DESCRIBE_VPN_GATEWAYS);
+            Map<String,String> parameters = getProvider().getStandardParameters(ELBMethod.DESCRIBE_VPN_GATEWAYS);
             EC2Method method;
             NodeList blocks;
             Document doc;
@@ -596,7 +597,7 @@ public class VPCGateway extends AbstractVpnSupport<AWSCloud> {
                     }
                 }
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             List<Vpn> list = new ArrayList();
 

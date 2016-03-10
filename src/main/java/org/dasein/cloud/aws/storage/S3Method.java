@@ -34,6 +34,7 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.util.EntityUtils;
 import org.apache.log4j.Logger;
 import org.dasein.cloud.CloudException;
+import org.dasein.cloud.GeneralCloudException;
 import org.dasein.cloud.InternalException;
 import org.dasein.cloud.aws.AWSCloud;
 import org.dasein.cloud.identity.ServiceAction;
@@ -486,7 +487,7 @@ public class S3Method {
                     input = entity.getContent();
                 }
                 catch( IOException e ) {
-                    throw new CloudException(e);
+                    throw new GeneralCloudException(e);
                 }
             }
             try {
@@ -526,7 +527,7 @@ public class S3Method {
                         }
                         catch( IOException e ) {
                             logger.error(e);
-                            throw new CloudException(e);
+                            throw new GeneralCloudException(e);
                         }
                     }
                     else {
@@ -554,7 +555,7 @@ public class S3Method {
                                 msg = "The cloud service encountered a server error while processing your request.";
                             }
                             logger.error(msg);
-                            throw new CloudException(msg);
+                            throw new GeneralCloudException(msg);
                         }
                         else {
                             leaveOpen = true;
@@ -608,7 +609,7 @@ public class S3Method {
                             }
                             if( endpoint != null && code.equals("TemporaryRedirect") ) {
                                 if( temporaryEndpoint != null ) {
-                                    throw new CloudException("Too deep redirect to " + endpoint);
+                                    throw new GeneralCloudException("Too deep redirect to " + endpoint);
                                 }
                                 else {
                                     return invoke(bucket, object, endpoint);
@@ -616,26 +617,26 @@ public class S3Method {
                             }
                             else {
                                 if( message == null ) {
-                                    throw new CloudException("Unable to identify error condition: " + status + "/" + requestId + "/" + code);
+                                    throw new GeneralCloudException("Unable to identify error condition: " + status + "/" + requestId + "/" + code);
                                 }
                                 throw new S3Exception(status, requestId, code, message);
                             }
                         }
                         else {
-                            throw new CloudException("Unable to parse error.");
+                            throw new GeneralCloudException("Unable to parse error.");
                         }
                     }
                     catch( IOException e ) {
                         if( status == HttpStatus.SC_FORBIDDEN ) {
                             throw new S3Exception(status, "", "AccessForbidden", "Access was denied without explanation.");
                         }                              
-                        throw new CloudException(e);
+                        throw new GeneralCloudException(e);
                     }
                     catch( RuntimeException e ) {
-                        throw new CloudException(e);
+                        throw new GeneralCloudException(e);
                     }
                     catch( Error e ) {
-                        throw new CloudException(e);
+                        throw new GeneralCloudException(e);
                     }					
                 }
             }
@@ -680,15 +681,15 @@ public class S3Method {
 		}
 		catch( IOException e ) {
 			logger.error(e);
-			throw new CloudException(e);
+			throw new GeneralCloudException(e);
 		}
 		catch( ParserConfigurationException e ) {
 			logger.error(e);
-			throw new CloudException(e);
+			throw new GeneralCloudException(e);
 		}
 		catch( SAXException e ) {
 			logger.error(e);
-			throw new CloudException(e);
+			throw new GeneralCloudException(e);
 	    }				
 	}
 }

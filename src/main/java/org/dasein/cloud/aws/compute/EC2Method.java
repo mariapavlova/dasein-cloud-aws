@@ -625,7 +625,7 @@ public class EC2Method {
     public void checkSuccess( NodeList returnNodes ) throws CloudException {
         if( returnNodes.getLength() > 0 ) {
             if( !returnNodes.item(0).getFirstChild().getNodeValue().equalsIgnoreCase("true") ) {
-                throw new CloudException("Failed to revoke security group rule without explanation.");
+                throw new GeneralCloudException("Failed to revoke security group rule without explanation.");
             }
         }
     }
@@ -685,7 +685,7 @@ public class EC2Method {
                 post.addHeader(strategy.getHeaderName(), strategy.getRequestId());
             }
 
-            List<NameValuePair> params = new ArrayList<NameValuePair>();
+            List<NameValuePair> params = new ArrayList<>();
 
             for( Map.Entry<String, String> entry : parameters.entrySet() ) {
                 params.add(new BasicNameValuePair(entry.getKey(), entry.getValue()));
@@ -766,7 +766,7 @@ public class EC2Method {
                 }
                 catch( IOException e ) {
                     logger.error("Error parsing response from AWS: " + e.getMessage());
-                    throw new CloudException(CloudErrorType.COMMUNICATION, status, null, e.getMessage());
+                    throw new CommunicationException(status, null, e.getMessage());
                 }
             }
             else if( status == HttpStatus.SC_FORBIDDEN ) {
@@ -821,7 +821,7 @@ public class EC2Method {
                                     requestId = id.getFirstChild().getNodeValue().trim();
                                 }
                                 if( message == null && code == null ) {
-                                    throw new CloudException(CloudErrorType.COMMUNICATION, status, null, "Unable to identify error condition: " + status + "/" + requestId + "/null");
+                                    throw new CommunicationException(status, null, "Unable to identify error condition: " + status + "/" + requestId + "/null");
                                 }
                                 else if( message == null ) {
                                     message = code;
@@ -850,7 +850,7 @@ public class EC2Method {
                 catch( Error ignore ) {
                     // ignore me
                 }
-                throw new CloudException(msg);
+                throw new GeneralCloudException(msg);
             }
             else {
                 if( logger.isDebugEnabled() ) {
@@ -884,7 +884,7 @@ public class EC2Method {
                             }
                         }
                         logger.error(msg);
-                        throw new CloudException(msg);
+                        throw new GeneralCloudException(msg);
                     }
                     else {
                         try {
@@ -941,18 +941,18 @@ public class EC2Method {
                             requestId = id.getFirstChild().getNodeValue().trim();
                         }
                         if( message == null ) {
-                            throw new CloudException(CloudErrorType.COMMUNICATION, status, null, "Unable to identify error condition: " + status + "/" + requestId + "/" + code);
+                            throw new CommunicationException(status, null, "Unable to identify error condition: " + status + "/" + requestId + "/" + code);
                         }
                         if( code != null && code.toLowerCase().contains("capacity") ) {
-                            throw new CloudException(CloudErrorType.CAPACITY, status, code, message);
+                            throw new GeneralCloudException(message);
                         }
                         throw EC2Exception.create(status, requestId, code, message);
                     }
-                    throw new CloudException("Unable to parse error.");
+                    throw new GeneralCloudException("Unable to parse error.");
                 }
                 catch( IOException e ) {
                     logger.error(e);
-                    throw new CloudException(e);
+                    throw new GeneralCloudException(e);
                 }
             }
         }
@@ -987,13 +987,13 @@ public class EC2Method {
             return XMLParser.parse(new ByteArrayInputStream(responseBody.getBytes()));
         }
         catch( IOException e ) {
-            throw new CloudException(e);
+            throw new GeneralCloudException(e);
         }
         catch( ParserConfigurationException e ) {
-            throw new CloudException(e);
+            throw new GeneralCloudException(e);
         }
         catch( SAXException e ) {
-            throw new CloudException(e);
+            throw new GeneralCloudException(e);
         }
     }
 
@@ -1011,7 +1011,7 @@ public class EC2Method {
             return parseResponse(sb.toString());
         }
         catch( IOException e ) {
-            throw new CloudException(e);
+            throw new GeneralCloudException(e);
         }
         finally {
             if( in != null ) {

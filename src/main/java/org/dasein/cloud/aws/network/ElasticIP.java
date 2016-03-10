@@ -71,7 +71,7 @@ public class ElasticIP extends AbstractIpAddressSupport<AWSCloud> {
                 return support.getVirtualMachine(instanceId);
             }
         }
-        throw new CloudException("Instances are not supported in " + getProvider().getCloudName());
+        throw new GeneralCloudException("Instances are not supported in " + getProvider().getCloudName());
     }
 
     @Override
@@ -99,7 +99,7 @@ public class ElasticIP extends AbstractIpAddressSupport<AWSCloud> {
                 } catch (Throwable ignore) {
                 }
             }
-            Map<String, String> parameters = getProvider().getStandardParameters(getContext(), EC2Method.ASSOCIATE_ADDRESS);
+            Map<String, String> parameters = getProvider().getStandardParameters(EC2Method.ASSOCIATE_ADDRESS);
             EC2Method method;
             NodeList blocks;
             Document doc;
@@ -111,12 +111,12 @@ public class ElasticIP extends AbstractIpAddressSupport<AWSCloud> {
                 doc = method.invoke();
             } catch (EC2Exception e) {
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             blocks = doc.getElementsByTagName("return");
             if (blocks.getLength() > 0) {
                 if (!blocks.item(0).getFirstChild().getNodeValue().equalsIgnoreCase("true")) {
-                    throw new CloudException("Association of address denied.");
+                    throw new GeneralCloudException("Association of address denied.");
                 }
             }
         } finally {
@@ -128,7 +128,7 @@ public class ElasticIP extends AbstractIpAddressSupport<AWSCloud> {
     public void assignToNetworkInterface(@Nonnull String addressId, @Nonnull String nicId) throws InternalException, CloudException {
         APITrace.begin(getProvider(), "IpAddress.assignAddressToNetworkInterface");
         try {
-            Map<String, String> parameters = getProvider().getStandardParameters(getContext(), EC2Method.ASSOCIATE_ADDRESS);
+            Map<String, String> parameters = getProvider().getStandardParameters(EC2Method.ASSOCIATE_ADDRESS);
             EC2Method method;
             NodeList blocks;
             Document doc;
@@ -140,12 +140,12 @@ public class ElasticIP extends AbstractIpAddressSupport<AWSCloud> {
                 doc = method.invoke();
             } catch (EC2Exception e) {
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             blocks = doc.getElementsByTagName("return");
             if (blocks.getLength() > 0) {
                 if (!blocks.item(0).getFirstChild().getNodeValue().equalsIgnoreCase("true")) {
-                    throw new CloudException("Association of address denied.");
+                    throw new GeneralCloudException("Association of address denied.");
                 }
             }
         } finally {
@@ -190,7 +190,7 @@ public class ElasticIP extends AbstractIpAddressSupport<AWSCloud> {
     IpAddress getEC2Address(@Nonnull String addressId) throws InternalException, CloudException {
         APITrace.begin(getProvider(), "IpAddress.getEC2Address");
         try {
-            Map<String, String> parameters = getProvider().getStandardParameters(getContext(), EC2Method.DESCRIBE_ADDRESSES);
+            Map<String, String> parameters = getProvider().getStandardParameters(EC2Method.DESCRIBE_ADDRESSES);
             IpAddress address = null;
             EC2Method method;
             NodeList blocks;
@@ -209,7 +209,7 @@ public class ElasticIP extends AbstractIpAddressSupport<AWSCloud> {
                     return null;
                 }
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             blocks = doc.getElementsByTagName("addressesSet");
             for (int i = 0; i < blocks.getLength(); i++) {
@@ -239,7 +239,7 @@ public class ElasticIP extends AbstractIpAddressSupport<AWSCloud> {
     IpAddress getVPCAddress(@Nonnull String addressId) throws InternalException, CloudException {
         APITrace.begin(getProvider(), "IpAddress.getVPCAddress");
         try {
-            Map<String, String> parameters = getProvider().getStandardParameters(getContext(), EC2Method.DESCRIBE_ADDRESSES);
+            Map<String, String> parameters = getProvider().getStandardParameters(EC2Method.DESCRIBE_ADDRESSES);
             IpAddress address = null;
             EC2Method method;
             NodeList blocks;
@@ -256,7 +256,7 @@ public class ElasticIP extends AbstractIpAddressSupport<AWSCloud> {
                     return null;
                 }
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             blocks = doc.getElementsByTagName("addressesSet");
             for (int i = 0; i < blocks.getLength(); i++) {
@@ -337,7 +337,7 @@ public class ElasticIP extends AbstractIpAddressSupport<AWSCloud> {
             if (!version.equals(IPVersion.IPV4)) {
                 return Collections.emptyList();
             }
-            Map<String, String> parameters = getProvider().getStandardParameters(getContext(), EC2Method.DESCRIBE_ADDRESSES);
+            Map<String, String> parameters = getProvider().getStandardParameters(EC2Method.DESCRIBE_ADDRESSES);
             ArrayList<IpAddress> list = new ArrayList<IpAddress>();
             EC2Method method;
             NodeList blocks;
@@ -348,7 +348,7 @@ public class ElasticIP extends AbstractIpAddressSupport<AWSCloud> {
                 doc = method.invoke();
             } catch (EC2Exception e) {
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             blocks = doc.getElementsByTagName("addressesSet");
             for (int i = 0; i < blocks.getLength(); i++) {
@@ -381,7 +381,7 @@ public class ElasticIP extends AbstractIpAddressSupport<AWSCloud> {
             if (!version.equals(IPVersion.IPV4)) {
                 return Collections.emptyList();
             }
-            Map<String, String> parameters = getProvider().getStandardParameters(getContext(), EC2Method.DESCRIBE_ADDRESSES);
+            Map<String, String> parameters = getProvider().getStandardParameters(EC2Method.DESCRIBE_ADDRESSES);
             ArrayList<ResourceStatus> list = new ArrayList<ResourceStatus>();
             EC2Method method;
             NodeList blocks;
@@ -392,7 +392,7 @@ public class ElasticIP extends AbstractIpAddressSupport<AWSCloud> {
                 doc = method.invoke();
             } catch (EC2Exception e) {
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             blocks = doc.getElementsByTagName("addressesSet");
             for (int i = 0; i < blocks.getLength(); i++) {
@@ -455,7 +455,7 @@ public class ElasticIP extends AbstractIpAddressSupport<AWSCloud> {
     public void releaseFromServer(@Nonnull String addressId) throws InternalException, CloudException {
         APITrace.begin(getProvider(), "IpAddress.releaseFromServer");
         try {
-            Map<String, String> parameters = getProvider().getStandardParameters(getContext(), EC2Method.DISASSOCIATE_ADDRESS);
+            Map<String, String> parameters = getProvider().getStandardParameters(EC2Method.DISASSOCIATE_ADDRESS);
             EC2Method method;
             NodeList blocks;
             Document doc;
@@ -465,7 +465,7 @@ public class ElasticIP extends AbstractIpAddressSupport<AWSCloud> {
                 // we need to look up its associationId (eipassoc-xxx)
                 String assocId = getVPCAddress(addressId).getProviderAssociationId();
                 if (assocId == null) {
-                    throw new CloudException("Address " + addressId + " is not associated with any server.");
+                    throw new GeneralCloudException("Address " + addressId + " is not associated with any server.");
                 }
                 addressId = assocId;
             }
@@ -475,12 +475,12 @@ public class ElasticIP extends AbstractIpAddressSupport<AWSCloud> {
                 doc = method.invoke();
             } catch (EC2Exception e) {
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             blocks = doc.getElementsByTagName("return");
             if (blocks.getLength() > 0) {
                 if (!blocks.item(0).getFirstChild().getNodeValue().equalsIgnoreCase("true")) {
-                    throw new CloudException("Release of address denied.");
+                    throw new GeneralCloudException("Release of address denied.");
                 }
             }
         } finally {
@@ -514,7 +514,7 @@ public class ElasticIP extends AbstractIpAddressSupport<AWSCloud> {
     public void releaseFromPool(@Nonnull String addressId) throws InternalException, CloudException {
         APITrace.begin(getProvider(), "IpAddress.releaseFromPool");
         try {
-            Map<String, String> parameters = getProvider().getStandardParameters(getContext(), EC2Method.RELEASE_ADDRESS);
+            Map<String, String> parameters = getProvider().getStandardParameters(EC2Method.RELEASE_ADDRESS);
             EC2Method method;
             NodeList blocks;
             Document doc;
@@ -525,12 +525,12 @@ public class ElasticIP extends AbstractIpAddressSupport<AWSCloud> {
                 doc = method.invoke();
             } catch (EC2Exception e) {
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             blocks = doc.getElementsByTagName("return");
             if (blocks.getLength() > 0) {
                 if (!blocks.item(0).getFirstChild().getNodeValue().equalsIgnoreCase("true")) {
-                    throw new CloudException("Deletion of address denied.");
+                    throw new GeneralCloudException("Deletion of address denied.");
                 }
             }
         } finally {
@@ -557,7 +557,7 @@ public class ElasticIP extends AbstractIpAddressSupport<AWSCloud> {
             if (!version.equals(IPVersion.IPV4)) {
                 throw new OperationNotSupportedException(getProvider().getCloudName() + " does not support " + version);
             }
-            Map<String, String> parameters = getProvider().getStandardParameters(getContext(), EC2Method.ALLOCATE_ADDRESS);
+            Map<String, String> parameters = getProvider().getStandardParameters(EC2Method.ALLOCATE_ADDRESS);
             EC2Method method;
             NodeList blocks;
             Document doc;
@@ -567,7 +567,7 @@ public class ElasticIP extends AbstractIpAddressSupport<AWSCloud> {
                 doc = method.invoke();
             } catch (EC2Exception e) {
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
 
             // First, let's see if there's a VPC-style id there
@@ -582,7 +582,7 @@ public class ElasticIP extends AbstractIpAddressSupport<AWSCloud> {
                 return blocks.item(0).getFirstChild().getNodeValue().trim();
             }
 
-            throw new CloudException("Unable to create an address.");
+            throw new GeneralCloudException("Unable to create an address.");
         } finally {
             APITrace.end();
         }
@@ -597,7 +597,7 @@ public class ElasticIP extends AbstractIpAddressSupport<AWSCloud> {
             if (!forVersion.equals(IPVersion.IPV4)) {
                 throw new OperationNotSupportedException(getProvider().getCloudName() + " does not support " + forVersion + ".");
             }
-            Map<String, String> parameters = getProvider().getStandardParameters(getContext(), EC2Method.ALLOCATE_ADDRESS);
+            Map<String, String> parameters = getProvider().getStandardParameters(EC2Method.ALLOCATE_ADDRESS);
             EC2Method method;
             NodeList blocks;
             Document doc;
@@ -608,13 +608,13 @@ public class ElasticIP extends AbstractIpAddressSupport<AWSCloud> {
                 doc = method.invoke();
             } catch (EC2Exception e) {
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             blocks = doc.getElementsByTagName("allocationId");
             if (blocks.getLength() > 0) {
                 return blocks.item(0).getFirstChild().getNodeValue().trim();
             }
-            throw new CloudException("Unable to create an address.");
+            throw new GeneralCloudException("Unable to create an address.");
         } finally {
             APITrace.end();
         }
@@ -641,7 +641,7 @@ public class ElasticIP extends AbstractIpAddressSupport<AWSCloud> {
         String regionId = ctx.getRegionId();
 
         if (regionId == null) {
-            throw new CloudException("No regionID was set in context");
+            throw new GeneralCloudException("No regionID was set in context");
         }
         NodeList attrs = node.getChildNodes();
         IpAddress address = new IpAddress();
@@ -687,7 +687,7 @@ public class ElasticIP extends AbstractIpAddressSupport<AWSCloud> {
             }
         }
         if (ip == null) {
-            throw new CloudException("Invalid address data, no IP.");
+            throw new GeneralCloudException("Invalid address data, no IP.");
         }
         if (ipAddressId == null) {
             ipAddressId = ip;

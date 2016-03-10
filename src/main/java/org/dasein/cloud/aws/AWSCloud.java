@@ -309,18 +309,18 @@ public class AWSCloud extends AbstractCloud {
     		try {
     			Map<String, String> parameters = null , tagParameters = null;
     			if (service.equalsIgnoreCase(ELBMethod.SERVICE_ID)) {
-    				parameters = getElbParameters(getContext(), "AddTags");
+    				parameters = getElbParameters("AddTags");
     				addIndexedParameters(parameters, "LoadBalancerNames.member.", resourceIds);
     				tagParameters = getTagsFromKeyValuePairs("Tags.member.", keyValuePairs);
     			}
     			else if(service.equalsIgnoreCase("rds")) {
-    				parameters = getStandardRdsParameters(getContext(), "AddTagsToResource");
+    				parameters = getStandardRdsParameters("AddTagsToResource");
     				// We can't tag multiple RDS resource at a time.
     				parameters.put("ResourceName", resourceIds[0]);
     				tagParameters = getTagsFromKeyValuePairs("Tags.member.", keyValuePairs);
     			}
     			else {
-    				parameters = getStandardParameters(getContext(), "CreateTags");
+    				parameters = getStandardParameters("CreateTags");
     				addIndexedParameters(parameters, "ResourceId.", resourceIds);
     				tagParameters = getTagsFromKeyValuePairs("Tag.", keyValuePairs);
     			}
@@ -352,7 +352,7 @@ public class AWSCloud extends AbstractCloud {
     }
 
     private Map<String, String> getTagsFromKeyValuePairs(String tagPrefix, Tag... keyValuePairs) {
-        Map<String, String> tagParameters = new HashMap<String, String>();
+        Map<String, String> tagParameters = new HashMap<>();
         for (int i = 0; i < keyValuePairs.length; i++) {
             String key = keyValuePairs[i].getKey();
             String value = keyValuePairs[i].getValue();
@@ -369,7 +369,7 @@ public class AWSCloud extends AbstractCloud {
     public void createTagsSynchronously(final String[] resourceIds, final Tag... keyValuePairs) throws CloudException, InternalException {
         APITrace.begin(this, "Cloud.createTagsSynchronously");
         try {
-            Map<String, String> parameters = getStandardParameters(getContext(), "CreateTags");
+            Map<String, String> parameters = getStandardParameters("CreateTags");
             addIndexedParameters(parameters, "ResourceId.", resourceIds);
 
             Map<String, String> tagParameters = getTagsFromKeyValuePairs("Tag.", keyValuePairs);
@@ -395,16 +395,16 @@ public class AWSCloud extends AbstractCloud {
     		try {
     			Map<String, String> parameters, tagParameters = null ;
     			if (service.equalsIgnoreCase(ELBMethod.SERVICE_ID)){
-    				parameters = getElbParameters(getContext(), "RemoveTags");
+    				parameters = getElbParameters("RemoveTags");
     				addIndexedParameters(parameters, "LoadBalancerNames.member.", resourceIds);
     				tagParameters = getTagsFromKeyValuePairs("Tags.member.", keyValuePairs);
     			} else if(service.equalsIgnoreCase("rds")){
-    				parameters = getStandardRdsParameters(getContext(), "RemoveTagsFromResource");
+    				parameters = getStandardRdsParameters("RemoveTagsFromResource");
     				parameters.put("ResourceName", resourceIds[0]);
     				for (int i = 0; i < keyValuePairs.length; i++)
     					parameters.put("TagKeys.member." + (i + 1) , keyValuePairs[i].getKey());
     			} else {
-    				parameters = getStandardParameters(getContext(), "DeleteTags");
+    				parameters = getStandardParameters("DeleteTags");
     				addIndexedParameters(parameters, "ResourceId.", resourceIds);
     				tagParameters = getTagsFromKeyValuePairs("Tag.", keyValuePairs);
     			}
@@ -729,12 +729,12 @@ public class AWSCloud extends AbstractCloud {
         return new AWSCloudStorageServices(this);
     }
 
-    public Map<String, String> getStandardParameters( ProviderContext ctx, String action ) throws InternalException {
-        return getStandardParameters(ctx, action, getEc2Version());
+    public Map<String, String> getStandardParameters( String action ) throws InternalException {
+        return getStandardParameters(action, getEc2Version());
     }
 
-    public Map<String, String> getStandardParameters( ProviderContext ctx, String action, String version ) throws InternalException {
-        Map<String, String> parameters = new HashMap<String, String>();
+    public Map<String, String> getStandardParameters( String action, String version ) throws InternalException {
+        Map<String, String> parameters = new HashMap<>();
 
         parameters.put(P_ACTION, action);
 //        parameters.put(P_SIGNATURE_VERSION, SIGNATURE_V4);
@@ -753,43 +753,43 @@ public class AWSCloud extends AbstractCloud {
         return parameters;
     }
     
-    private @Nonnull Map<String, String> getElbParameters( @Nonnull ProviderContext ctx, @Nonnull String action ) throws InternalException {
-		Map<String, String> parameters = getStandardParameters(ctx, action);
+    private @Nonnull Map<String, String> getElbParameters( @Nonnull String action ) throws InternalException {
+		Map<String, String> parameters = getStandardParameters(action);
 
 		parameters.put(P_VERSION, getElbVersion());
 		return parameters;
 	}
 
-    public Map<String, String> getStandardCloudWatchParameters( ProviderContext ctx, String action ) throws InternalException {
-        Map<String, String> parameters = getStandardParameters(ctx, action);
+    public Map<String, String> getStandardCloudWatchParameters( String action ) throws InternalException {
+        Map<String, String> parameters = getStandardParameters(action);
 
         parameters.put(P_VERSION, getCloudWatchVersion());
         return parameters;
     }
 
-    public Map<String, String> getStandardRdsParameters( ProviderContext ctx, String action ) throws InternalException {
-        Map<String, String> parameters = getStandardParameters(ctx, action);
+    public Map<String, String> getStandardRdsParameters( String action ) throws InternalException {
+        Map<String, String> parameters = getStandardParameters(action);
 
         parameters.put(P_VERSION, getRdsVersion());
         return parameters;
     }
 
-    public Map<String, String> getStandardSimpleDBParameters( ProviderContext ctx, String action ) throws InternalException {
-        Map<String, String> parameters = getStandardParameters(ctx, action);
+    public Map<String, String> getStandardSimpleDBParameters( String action ) throws InternalException {
+        Map<String, String> parameters = getStandardParameters(action);
 
         parameters.put(P_VERSION, getSdbVersion());
         return parameters;
     }
 
-    public Map<String, String> getStandardSnsParameters( ProviderContext ctx, String action ) throws InternalException {
-        Map<String, String> parameters = getStandardParameters(ctx, action);
+    public Map<String, String> getStandardSnsParameters( String action ) throws InternalException {
+        Map<String, String> parameters = getStandardParameters(action);
 
         parameters.put(P_VERSION, getSnsVersion());
         return parameters;
     }
 
-    public Map<String, String> getStandardSqsParameters( ProviderContext ctx, String action ) throws InternalException {
-        Map<String, String> parameters = getStandardParameters(ctx, action);
+    public Map<String, String> getStandardSqsParameters( String action ) throws InternalException {
+        Map<String, String> parameters = getStandardParameters(action);
 
         parameters.put(P_VERSION, getSqsVersion());
         return parameters;
@@ -800,7 +800,7 @@ public class AWSCloud extends AbstractCloud {
             return;
         }
         if( parameters == null ) {
-            parameters = new HashMap<String, String>();
+            parameters = new HashMap<>();
         }
         parameters.putAll(extraParameters);
     }
@@ -814,7 +814,7 @@ public class AWSCloud extends AbstractCloud {
             return null;
         }
 
-        Map<String, String> filterParameters = new HashMap<String, String>();
+        Map<String, String> filterParameters = new HashMap<>();
         int i = startingFilterIndex;
 
         for (Map.Entry<String, String> parameter : tags.entrySet()) {
@@ -876,8 +876,8 @@ public class AWSCloud extends AbstractCloud {
                 fmt = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
                 try {
                     return fmt.parse(time).getTime();
-                } catch( ParseException encore ) {
-                    throw new CloudException("Could not parse date: " + time);
+                } catch( ParseException pe ) {
+                    throw new GeneralCloudException("Could not parse date: " + time, pe);
                 }
             }
         }
@@ -1242,12 +1242,10 @@ public class AWSCloud extends AbstractCloud {
     private String getOwnerId() {
         APITrace.begin(this, "AWSCloud.getOwnerId");
         try {
-            ProviderContext ctx = getContext();
-
-            if( ctx == null ) {
+            if( getContext() == null ) {
                 return null;
             }
-            Map<String, String> parameters = getStandardParameters(getContext(), EC2Method.DESCRIBE_SECURITY_GROUPS);
+            Map<String, String> parameters = getStandardParameters( EC2Method.DESCRIBE_SECURITY_GROUPS);
             EC2Method method;
             NodeList blocks;
             Document doc;
@@ -1257,7 +1255,7 @@ public class AWSCloud extends AbstractCloud {
                 doc = method.invoke();
             } catch( EC2Exception e ) {
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             blocks = doc.getElementsByTagName("securityGroupInfo");
             for( int i = 0; i < blocks.getLength(); i++ ) {
@@ -1318,7 +1316,7 @@ public class AWSCloud extends AbstractCloud {
         } catch( ParseException e ) {
             logger.error(e);
             e.printStackTrace();
-            throw new CloudException(e);
+            throw new GeneralCloudException(e);
         }
     }
 

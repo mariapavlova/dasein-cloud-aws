@@ -60,7 +60,7 @@ public class ElasticLoadBalancer extends AbstractLoadBalancerSupport<AWSCloud> {
                 ProviderContext ctx = provider.getContext();
 
                 if( ctx == null ) {
-                    throw new CloudException("No valid context is established for this request");
+                    throw new GeneralCloudException("No valid context is established for this request");
                 }
                 Map<String, String> parameters = getELBParameters(getContext(), ELBMethod.CREATE_LOAD_BALANCER_LISTENERS );
                 ELBMethod method;
@@ -72,7 +72,7 @@ public class ElasticLoadBalancer extends AbstractLoadBalancerSupport<AWSCloud> {
                         case HTTP: parameters.put("Listeners.member." + i + ".Protocol", "HTTP"); break;
                         case HTTPS: parameters.put("Listeners.member." + i + ".Protocol", "HTTPS"); break;
                         case RAW_TCP: parameters.put("Listeners.member." + i + ".Protocol", "TCP"); break;
-                        default: throw new CloudException("Invalid protocol: " + listener.getNetworkProtocol());
+                        default: throw new GeneralCloudException("Invalid protocol: " + listener.getNetworkProtocol());
                     }
                     parameters.put("Listeners.member." + i + ".LoadBalancerPort", String.valueOf(listener.getPublicPort()));
                     parameters.put("Listeners.member." + i + ".InstancePort", String.valueOf(listener.getPrivatePort()));
@@ -91,7 +91,7 @@ public class ElasticLoadBalancer extends AbstractLoadBalancerSupport<AWSCloud> {
                     method.invoke();
                 } catch( EC2Exception e ) {
                     logger.error(e.getSummary());
-                    throw new CloudException(e);
+                    throw new GeneralCloudException(e);
                 }
             }
         } finally {
@@ -108,7 +108,7 @@ public class ElasticLoadBalancer extends AbstractLoadBalancerSupport<AWSCloud> {
                 ProviderContext ctx = provider.getContext();
 
                 if( ctx == null ) {
-                    throw new CloudException("No valid context is established for this request");
+                    throw new GeneralCloudException("No valid context is established for this request");
                 }
                 Map<String, String> parameters = getELBParameters(getContext(), ELBMethod.DELETE_LOAD_BALANCER_LISTENERS);
                 ELBMethod method;
@@ -124,7 +124,7 @@ public class ElasticLoadBalancer extends AbstractLoadBalancerSupport<AWSCloud> {
                     method.invoke();
                 } catch( EC2Exception e ) {
                     logger.error(e.getSummary());
-                    throw new CloudException(e);
+                    throw new GeneralCloudException(e);
                 }
             }
         } finally {
@@ -141,7 +141,7 @@ public class ElasticLoadBalancer extends AbstractLoadBalancerSupport<AWSCloud> {
                 ProviderContext ctx = provider.getContext();
 
                 if( ctx == null ) {
-                    throw new CloudException("No valid context is established for this request");
+                    throw new GeneralCloudException("No valid context is established for this request");
                 }
                 Map<String, String> parameters = getELBParameters(getContext(), ELBMethod.ENABLE_AVAILABILITY_ZONES);
                 ELBMethod method;
@@ -157,7 +157,7 @@ public class ElasticLoadBalancer extends AbstractLoadBalancerSupport<AWSCloud> {
                 }
                 catch( EC2Exception e ) {
                     logger.error(e.getSummary());
-                    throw new CloudException(e);
+                    throw new GeneralCloudException(e);
                 }
             }
         }
@@ -175,7 +175,7 @@ public class ElasticLoadBalancer extends AbstractLoadBalancerSupport<AWSCloud> {
                 ProviderContext ctx = provider.getContext();
 
                 if( ctx == null ) {
-                    throw new CloudException("No valid context is established for this request");
+                    throw new GeneralCloudException("No valid context is established for this request");
                 }
                 Map<String, String> parameters = getELBParameters(getContext(), ELBMethod.REGISTER_INSTANCES);
                 ELBMethod method;
@@ -183,13 +183,13 @@ public class ElasticLoadBalancer extends AbstractLoadBalancerSupport<AWSCloud> {
                 LoadBalancer lb = getLoadBalancer(toLoadBalancerId);
 
                 if( lb == null ) {
-                    throw new CloudException("No such load balancer: " + toLoadBalancerId);
+                    throw new GeneralCloudException("No such load balancer: " + toLoadBalancerId);
                 }
                 LbListener[] listeners = lb.getListeners();
 
                 //noinspection ConstantConditions
                 if( listeners == null ) {
-                    throw new CloudException("The load balancer " + toLoadBalancerId + " is improperly configured.");
+                    throw new GeneralCloudException("The load balancer " + toLoadBalancerId + " is improperly configured.");
                 }
                 parameters.put("LoadBalancerName", toLoadBalancerId);
                 int i = 1;
@@ -200,7 +200,7 @@ public class ElasticLoadBalancer extends AbstractLoadBalancerSupport<AWSCloud> {
                 try {
                     method.invoke();
                 } catch( EC2Exception e ) {
-                    throw new CloudException(e);
+                    throw new GeneralCloudException(e);
                 }
             }
         } finally {
@@ -215,7 +215,7 @@ public class ElasticLoadBalancer extends AbstractLoadBalancerSupport<AWSCloud> {
             ProviderContext ctx = provider.getContext();
 
             if( ctx == null ) {
-                throw new CloudException("No valid context is established for this request");
+                throw new GeneralCloudException("No valid context is established for this request");
             }
             Map<String, String> parameters = getELBParameters(provider.getContext(), ELBMethod.CREATE_LOAD_BALANCER);
             ELBMethod method;
@@ -234,7 +234,7 @@ public class ElasticLoadBalancer extends AbstractLoadBalancerSupport<AWSCloud> {
                     case HTTP: parameters.put("Listeners.member." + i + ".Protocol", "HTTP"); break;
                     case HTTPS: parameters.put("Listeners.member." + i + ".Protocol", "HTTPS"); break;
                     case RAW_TCP: parameters.put("Listeners.member." + i + ".Protocol", "TCP"); break;
-                    default: throw new CloudException("Invalid protocol: " + listener.getNetworkProtocol());
+                    default: throw new GeneralCloudException("Invalid protocol: " + listener.getNetworkProtocol());
                 }
                 parameters.put("Listeners.member." + i + ".LoadBalancerPort", String.valueOf(listener.getPublicPort()));
                 parameters.put("Listeners.member." + i + ".InstancePort", String.valueOf(listener.getPrivatePort()));
@@ -274,7 +274,7 @@ public class ElasticLoadBalancer extends AbstractLoadBalancerSupport<AWSCloud> {
                 doc = method.invoke();
             } catch( EC2Exception e ) {
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             blocks = doc.getElementsByTagName("DNSName");
             if( blocks.getLength() > 0 ) {
@@ -326,7 +326,7 @@ public class ElasticLoadBalancer extends AbstractLoadBalancerSupport<AWSCloud> {
                 }
                 return name;
             }
-            throw new CloudException("Unable to create a load balancer and no error message from the cloud.");
+            throw new GeneralCloudException("Unable to create a load balancer and no error message from the cloud.");
         } finally {
             APITrace.end();
         }
@@ -340,7 +340,7 @@ public class ElasticLoadBalancer extends AbstractLoadBalancerSupport<AWSCloud> {
                 return null;
             }
 
-            Map<String, String> parameters = provider.getStandardParameters(getContext(),
+            Map<String, String> parameters = provider.getStandardParameters(
                     IAMMethod.CREATE_SSL_CERTIFICATE, IAMMethod.VERSION);
             AWSCloud.addValueIfNotNull(parameters, "CertificateBody", options.getCertificateBody());
             AWSCloud.addValueIfNotNull(parameters, "CertificateChain", options.getCertificateChain());
@@ -355,7 +355,7 @@ public class ElasticLoadBalancer extends AbstractLoadBalancerSupport<AWSCloud> {
             }
             catch ( EC2Exception e ) {
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             NodeList blocks = doc.getElementsByTagName("ServerCertificateMetadata");
             for ( int i = 0; i < blocks.getLength(); i++ ) {
@@ -426,7 +426,7 @@ public class ElasticLoadBalancer extends AbstractLoadBalancerSupport<AWSCloud> {
                     return null;
                 }
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             blocks = doc.getElementsByTagName("LoadBalancerDescriptions");
             for( int i = 0; i < blocks.getLength(); i++ ) {
@@ -458,7 +458,7 @@ public class ElasticLoadBalancer extends AbstractLoadBalancerSupport<AWSCloud> {
                 return null;
             }
 
-            Map<String, String> parameters = provider.getStandardParameters(getContext(),
+            Map<String, String> parameters = provider.getStandardParameters(
                     IAMMethod.GET_SSL_CERTIFICATE, IAMMethod.VERSION);
             parameters.put("ServerCertificateName", certificateName);
             Document doc;
@@ -474,7 +474,7 @@ public class ElasticLoadBalancer extends AbstractLoadBalancerSupport<AWSCloud> {
                     return null;
                 }
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             NodeList blocks = doc.getElementsByTagName("ServerCertificate");
             for ( int i = 0; i < blocks.getLength(); i++ ) {
@@ -499,7 +499,7 @@ public class ElasticLoadBalancer extends AbstractLoadBalancerSupport<AWSCloud> {
             }
 
             List<SSLCertificate> list  = new ArrayList<SSLCertificate>();
-            Map<String, String> parameters = provider.getStandardParameters(getContext(),
+            Map<String, String> parameters = provider.getStandardParameters(
                     IAMMethod.LIST_SSL_CERTIFICATES, IAMMethod.VERSION);
             NodeList blocks;
             Document doc;
@@ -510,7 +510,7 @@ public class ElasticLoadBalancer extends AbstractLoadBalancerSupport<AWSCloud> {
             }
             catch ( EC2Exception e ) {
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
 
             blocks = doc.getElementsByTagName("ServerCertificateMetadataList");
@@ -545,7 +545,7 @@ public class ElasticLoadBalancer extends AbstractLoadBalancerSupport<AWSCloud> {
                 ProviderContext ctx = provider.getContext();
 
                 if( ctx == null ) {
-                    throw new CloudException("No valid context is established for this request");
+                    throw new GeneralCloudException("No valid context is established for this request");
                 }
                 if( !provider.getEC2Provider().isAWS() ) {
                     return false;
@@ -566,7 +566,7 @@ public class ElasticLoadBalancer extends AbstractLoadBalancerSupport<AWSCloud> {
                     if( code != null && ( code.equals("SubscriptionCheckFailed") || code.equals("AuthFailure") || code.equals("SignatureDoesNotMatch") || code.equals("InvalidClientTokenId") || code.equals("OptInRequired") ) ) {
                         return false;
                     }
-                    throw new CloudException(e);
+                    throw new GeneralCloudException(e);
                 }
             } catch( RuntimeException e ) {
                 logger.error("Could not check subscription status: " + e.getMessage());
@@ -616,7 +616,7 @@ public class ElasticLoadBalancer extends AbstractLoadBalancerSupport<AWSCloud> {
                 doc = method.invoke();
             } catch( EC2Exception e ) {
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             blocks = doc.getElementsByTagName("InstanceStates");
             for( int i = 0; i < blocks.getLength(); i++ ) {
@@ -658,7 +658,7 @@ public class ElasticLoadBalancer extends AbstractLoadBalancerSupport<AWSCloud> {
                 doc = method.invoke();
             } catch( EC2Exception e ) {
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             blocks = doc.getElementsByTagName("LoadBalancerDescriptions");
             for( int i = 0; i < blocks.getLength(); i++ ) {
@@ -701,7 +701,7 @@ public class ElasticLoadBalancer extends AbstractLoadBalancerSupport<AWSCloud> {
                 doc = method.invoke();
             } catch( EC2Exception e ) {
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             blocks = doc.getElementsByTagName("LoadBalancerDescriptions");
             for( int i = 0; i < blocks.getLength(); i++ ) {
@@ -773,7 +773,7 @@ public class ElasticLoadBalancer extends AbstractLoadBalancerSupport<AWSCloud> {
             ProviderContext ctx = provider.getContext();
 
             if( ctx == null ) {
-                throw new CloudException("No valid context is established for this request");
+                throw new GeneralCloudException("No valid context is established for this request");
             }
             Map<String, String> parameters = getELBParameters(getContext(), ELBMethod.DELETE_LOAD_BALANCER);
             ELBMethod method;
@@ -784,7 +784,7 @@ public class ElasticLoadBalancer extends AbstractLoadBalancerSupport<AWSCloud> {
                 method.invoke();
             } catch( EC2Exception e ) {
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
         } finally {
             APITrace.end();
@@ -800,7 +800,7 @@ public class ElasticLoadBalancer extends AbstractLoadBalancerSupport<AWSCloud> {
                 ProviderContext ctx = provider.getContext();
 
                 if( ctx == null ) {
-                    throw new CloudException("No valid context is established for this request");
+                    throw new GeneralCloudException("No valid context is established for this request");
                 }
                 Map<String, String> parameters = getELBParameters(getContext(), ELBMethod.DISABLE_AVAILABILITY_ZONES);
                 ELBMethod method;
@@ -815,7 +815,7 @@ public class ElasticLoadBalancer extends AbstractLoadBalancerSupport<AWSCloud> {
                     method.invoke();
                 } catch( EC2Exception e ) {
                     logger.error(e.getSummary());
-                    throw new CloudException(e);
+                    throw new GeneralCloudException(e);
                 }
             }
         } finally {
@@ -831,7 +831,7 @@ public class ElasticLoadBalancer extends AbstractLoadBalancerSupport<AWSCloud> {
                 return;
             }
 
-            Map<String, String> parameters = provider.getStandardParameters(getContext(),
+            Map<String, String> parameters = provider.getStandardParameters(
                     IAMMethod.DELETE_SSL_CERTIFICATE, IAMMethod.VERSION);
             parameters.put("ServerCertificateName", certificateName);
             IAMMethod method = new IAMMethod(provider, parameters);
@@ -840,7 +840,7 @@ public class ElasticLoadBalancer extends AbstractLoadBalancerSupport<AWSCloud> {
             }
             catch ( EC2Exception e ) {
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
         }
         finally {
@@ -857,7 +857,7 @@ public class ElasticLoadBalancer extends AbstractLoadBalancerSupport<AWSCloud> {
                 ProviderContext ctx = provider.getContext();
 
                 if( ctx == null ) {
-                    throw new CloudException("No valid context is established for this request");
+                    throw new GeneralCloudException("No valid context is established for this request");
                 }
                 Map<String, String> parameters = getELBParameters(getContext(), ELBMethod.DEREGISTER_INSTANCES);
                 ELBMethod method;
@@ -872,7 +872,7 @@ public class ElasticLoadBalancer extends AbstractLoadBalancerSupport<AWSCloud> {
                     method.invoke();
                 } catch( EC2Exception e ) {
                     logger.error(e.getSummary());
-                    throw new CloudException(e);
+                    throw new GeneralCloudException(e);
                 }
             }
         } finally {
@@ -887,7 +887,7 @@ public class ElasticLoadBalancer extends AbstractLoadBalancerSupport<AWSCloud> {
         try {
             ProviderContext ctx = provider.getContext();
             if (ctx == null) {
-                throw new CloudException("No valid context is established for this request");
+                throw new GeneralCloudException("No valid context is established for this request");
             }
 
             // Find the certificate ARN first
@@ -908,7 +908,7 @@ public class ElasticLoadBalancer extends AbstractLoadBalancerSupport<AWSCloud> {
             }
             catch ( EC2Exception e ) {
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
         }
         finally {
@@ -927,7 +927,7 @@ public class ElasticLoadBalancer extends AbstractLoadBalancerSupport<AWSCloud> {
         try {
             ProviderContext ctx = provider.getContext();
             if( ctx == null ) {
-                throw new CloudException("No valid context is established for this request");
+                throw new GeneralCloudException("No valid context is established for this request");
             }
 
             if( options.getProviderLoadBalancerId() == null ) {
@@ -944,7 +944,7 @@ public class ElasticLoadBalancer extends AbstractLoadBalancerSupport<AWSCloud> {
             parameters.put("HealthCheck.UnhealthyThreshold", options.getUnhealthyCount() + "");
             String path = "";
             if( options.getPort() < 1 || options.getPort() > 65535 ) {
-                throw new CloudException("Port must have a number between 1 and 65535.");
+                throw new GeneralCloudException("Port must have a number between 1 and 65535.");
             }
             if( options.getProtocol().equals(LoadBalancerHealthCheck.HCProtocol.HTTP) || options.getProtocol().equals(LoadBalancerHealthCheck.HCProtocol.HTTPS)) {
                 if( options.getPath() != null && !options.getPath().isEmpty() ) {
@@ -966,13 +966,13 @@ public class ElasticLoadBalancer extends AbstractLoadBalancerSupport<AWSCloud> {
                 doc = method.invoke();
             } catch( EC2Exception e ) {
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             blocks = doc.getElementsByTagName("HealthCheck");
             if( blocks.getLength() > 0 ) {
                 return toLBHealthCheck(options.getProviderLoadBalancerId(), blocks.item(0));
             }
-            throw new CloudException("An error occurred while configuring the Health Check.");
+            throw new GeneralCloudException("An error occurred while configuring the Health Check.");
         } finally {
             APITrace.end();
         }
@@ -1003,7 +1003,7 @@ public class ElasticLoadBalancer extends AbstractLoadBalancerSupport<AWSCloud> {
                     return null;
                 }
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             blocks = doc.getElementsByTagName("HealthCheck");
             if( blocks.getLength() > 0 ) {
@@ -1019,7 +1019,7 @@ public class ElasticLoadBalancer extends AbstractLoadBalancerSupport<AWSCloud> {
     public void removeLoadBalancerHealthCheck( @Nonnull String providerLoadBalancerId ) throws CloudException, InternalException {
         // TODO(stas): throwing exception here will cause LB tests to fail, so maybe we could do something
         // smarter: perhaps reconstruct the whole ELB without the HC? For now I'll do a no-op.
-        //throw new CloudException(provider.getCloudName() + " does not support removal of health checks");
+        //throw new GeneralCloudException(provider.getCloudName() + " does not support removal of health checks");
         logger.warn(provider.getCloudName() + " does not support removal of health checks");
     }
 
@@ -1031,7 +1031,7 @@ public class ElasticLoadBalancer extends AbstractLoadBalancerSupport<AWSCloud> {
             ProviderContext ctx = provider.getContext();
 
             if (ctx == null) {
-                throw new CloudException("No valid context is established for this request");
+                throw new GeneralCloudException("No valid context is established for this request");
             }
 
             Map<String, String> parameters = getELBParameters(ctx, ELBMethod.APPLY_SECURITY_GROUPS_TO_LOAD_BALANCER);
@@ -1047,7 +1047,7 @@ public class ElasticLoadBalancer extends AbstractLoadBalancerSupport<AWSCloud> {
                 method.invoke();
             } catch (EC2Exception e) {
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
         }
         finally {
@@ -1061,7 +1061,7 @@ public class ElasticLoadBalancer extends AbstractLoadBalancerSupport<AWSCloud> {
         try {
             ProviderContext ctx = provider.getContext();
             if (ctx == null) {
-                throw new CloudException("No valid context is established for this request");
+                throw new GeneralCloudException("No valid context is established for this request");
             }
 
             Map<String, String> parameters = getELBParameters(ctx, ELBMethod.MODIFY_LOADBALANCER_ATTRIBUTES);
@@ -1083,7 +1083,7 @@ public class ElasticLoadBalancer extends AbstractLoadBalancerSupport<AWSCloud> {
                 method.invoke();
             } catch (EC2Exception e) {
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
         } finally {
             APITrace.end();
@@ -1096,7 +1096,7 @@ public class ElasticLoadBalancer extends AbstractLoadBalancerSupport<AWSCloud> {
         try {
             ProviderContext ctx = provider.getContext();
             if (ctx == null) {
-                throw new CloudException("No valid context is established for this request");
+                throw new GeneralCloudException("No valid context is established for this request");
             }
 
             Map<String, String> parameters = getELBParameters(ctx, ELBMethod.DESCRIBE_LOADBALANCER_ATTRIBUTES);
@@ -1114,7 +1114,7 @@ public class ElasticLoadBalancer extends AbstractLoadBalancerSupport<AWSCloud> {
                 doc = method.invoke();
             } catch (EC2Exception e) {
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
 
             blocks = doc.getElementsByTagName("LoadBalancerAttributes");
@@ -1162,7 +1162,7 @@ public class ElasticLoadBalancer extends AbstractLoadBalancerSupport<AWSCloud> {
                 doc = method.invoke();
             } catch( EC2Exception e ) {
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             blocks = doc.getElementsByTagName("LoadBalancerDescriptions");
             for( int i = 0; i < blocks.getLength(); i++ ) {
@@ -1220,7 +1220,7 @@ public class ElasticLoadBalancer extends AbstractLoadBalancerSupport<AWSCloud> {
         try {
             ProviderContext ctx = provider.getContext();
             if (ctx == null) {
-                throw new CloudException("No valid context is established for this request");
+                throw new GeneralCloudException("No valid context is established for this request");
             }
 
             Map<String, String> parameters = getELBParameters(ctx, ELBMethod.ATTACH_LB_TO_SUBNETS);
@@ -1235,7 +1235,7 @@ public class ElasticLoadBalancer extends AbstractLoadBalancerSupport<AWSCloud> {
             }
             catch ( EC2Exception e ) {
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
         }
         finally {
@@ -1249,7 +1249,7 @@ public class ElasticLoadBalancer extends AbstractLoadBalancerSupport<AWSCloud> {
         try {
             ProviderContext ctx = provider.getContext();
             if (ctx == null) {
-                throw new CloudException("No valid context is established for this request");
+                throw new GeneralCloudException("No valid context is established for this request");
             }
 
             Map<String, String> parameters = getELBParameters(ctx, ELBMethod.DETACH_LB_FROM_SUBNETS);
@@ -1264,7 +1264,7 @@ public class ElasticLoadBalancer extends AbstractLoadBalancerSupport<AWSCloud> {
             }
             catch ( EC2Exception e ) {
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
         }
         finally {
@@ -1390,21 +1390,21 @@ public class ElasticLoadBalancer extends AbstractLoadBalancerSupport<AWSCloud> {
         if( node == null ) {
             return null;
         }
-        List<LbListener> listenerList = new ArrayList<LbListener>();
-        List<Integer> portList = new ArrayList<Integer>();
-        List<String> zoneList = new ArrayList<String>();
-        List<String> serverIds = new ArrayList<String>();
-        List<String> firewallIds = new ArrayList<String>();
+        List<LbListener> listenerList = new ArrayList<>();
+        List<Integer> portList = new ArrayList<>();
+        List<String> zoneList = new ArrayList<>();
+        List<String> serverIds = new ArrayList<>();
+        List<String> firewallIds = new ArrayList<>();
         String regionId = getContext().getRegionId();
         String lbName = null, description = null, lbId = null, cname = null;
         boolean withHealthCheck = false;
         long created = 0L;
         LbType type = null;
-        ArrayList<String> subnetList = new ArrayList<String>();
+        ArrayList<String> subnetList = new ArrayList<>();
         String vlanId = null;
 
         if( regionId == null ) {
-            throw new CloudException("No region was set for this context");
+            throw new InternalException("No region was set for this context");
         }
         NodeList attrs = node.getChildNodes();
 

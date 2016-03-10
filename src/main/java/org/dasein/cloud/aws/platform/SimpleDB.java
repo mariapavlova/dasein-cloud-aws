@@ -19,18 +19,14 @@
 
 package org.dasein.cloud.aws.platform;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
 
 import javax.annotation.Nonnull;
 
 import org.apache.http.HttpStatus;
 import org.apache.log4j.Logger;
 import org.dasein.cloud.CloudException;
+import org.dasein.cloud.GeneralCloudException;
 import org.dasein.cloud.InternalException;
 import org.dasein.cloud.ResourceStatus;
 import org.dasein.cloud.aws.AWSCloud;
@@ -88,7 +84,7 @@ public class SimpleDB implements KeyValueDatabaseSupport {
         APITrace.begin(provider, "KVDB.addKeyValuePairs");
         try {
             if( pairs != null && pairs.length > 0 ) {
-                Map<String, String> parameters = provider.getStandardSimpleDBParameters(provider.getContext(), PUT_ATTRIBUTES);
+                Map<String, String> parameters = provider.getStandardSimpleDBParameters(PUT_ATTRIBUTES);
                 EC2Method method;
                 int i = 0;
 
@@ -103,7 +99,7 @@ public class SimpleDB implements KeyValueDatabaseSupport {
                 try {
                     method.invoke();
                 } catch( EC2Exception e ) {
-                    throw new CloudException(e);
+                    throw new GeneralCloudException(e);
                 }
             }
         }
@@ -116,7 +112,7 @@ public class SimpleDB implements KeyValueDatabaseSupport {
     public String createDatabase(String name, String description) throws CloudException, InternalException {
         APITrace.begin(provider, "KVDB.createDatabase");
         try {
-            Map<String,String> parameters = provider.getStandardSimpleDBParameters(provider.getContext(), CREATE_DOMAIN);
+            Map<String,String> parameters = provider.getStandardSimpleDBParameters(CREATE_DOMAIN);
             EC2Method method;
 
             name = validateName(name);
@@ -126,7 +122,7 @@ public class SimpleDB implements KeyValueDatabaseSupport {
                 method.invoke();
             }
             catch( EC2Exception e ) {
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             return name;
         }
@@ -147,7 +143,7 @@ public class SimpleDB implements KeyValueDatabaseSupport {
     public KeyValueDatabase getDatabase(String domainId) throws CloudException, InternalException {
         APITrace.begin(provider, "KVDB.getDatabase");
         try {
-            Map<String,String> parameters = provider.getStandardSimpleDBParameters(provider.getContext(), DOMAIN_META_DATA);
+            Map<String,String> parameters = provider.getStandardSimpleDBParameters(DOMAIN_META_DATA);
             EC2Method method;
             Document doc;
 
@@ -162,7 +158,7 @@ public class SimpleDB implements KeyValueDatabaseSupport {
                 if( code != null && code.equals("NoSuchDomain") ) {
                     return null;
                 }
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             KeyValueDatabase database = new KeyValueDatabase();
 
@@ -224,7 +220,7 @@ public class SimpleDB implements KeyValueDatabaseSupport {
     public Iterable<KeyValuePair> getKeyValuePairs(String inDomainId, String itemId, boolean consistentRead) throws CloudException, InternalException {
         APITrace.begin(provider, "KVDB.getKeyValuePairs");
         try {
-            Map<String,String> parameters = provider.getStandardSimpleDBParameters(provider.getContext(), GET_ATTRIBUTES);
+            Map<String,String> parameters = provider.getStandardSimpleDBParameters(GET_ATTRIBUTES);
             EC2Method method;
             Document doc;
 
@@ -241,9 +237,9 @@ public class SimpleDB implements KeyValueDatabaseSupport {
                 if( code != null && code.equals("NoSuchDomain") ) {
                     return null;
                 }
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             };
-            ArrayList<KeyValuePair> pairs = new ArrayList<KeyValuePair>();
+            ArrayList<KeyValuePair> pairs = new ArrayList<>();
 
             NodeList blocks = doc.getElementsByTagName("Attribute");
             for( int i=0; i<blocks.getLength(); i++ ) {
@@ -301,7 +297,7 @@ public class SimpleDB implements KeyValueDatabaseSupport {
     public boolean isSubscribed() throws CloudException, InternalException {
         APITrace.begin(provider, "KVDB.isSubscribed");
         try {
-            Map<String,String> parameters = provider.getStandardSimpleDBParameters(provider.getContext(), LIST_DOMAINS);
+            Map<String,String> parameters = provider.getStandardSimpleDBParameters(LIST_DOMAINS);
             EC2Method method;
 
             method = new EC2Method(SERVICE_ID, provider, parameters);
@@ -322,7 +318,7 @@ public class SimpleDB implements KeyValueDatabaseSupport {
                 if( logger.isDebugEnabled() ) {
                     e.printStackTrace();
                 }
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
         }
         finally {
@@ -344,7 +340,7 @@ public class SimpleDB implements KeyValueDatabaseSupport {
             String marker = null;
 
             do {
-                Map<String,String> parameters = provider.getStandardSimpleDBParameters(provider.getContext(), LIST_DOMAINS);
+                Map<String,String> parameters = provider.getStandardSimpleDBParameters(LIST_DOMAINS);
                 EC2Method method;
                 NodeList blocks;
                 Document doc;
@@ -357,7 +353,7 @@ public class SimpleDB implements KeyValueDatabaseSupport {
                     doc = method.invoke();
                 }
                 catch( EC2Exception e ) {
-                    throw new CloudException(e);
+                    throw new GeneralCloudException(e);
                 }
                 marker = null;
                 blocks = doc.getElementsByTagName("NextToken");
@@ -398,11 +394,11 @@ public class SimpleDB implements KeyValueDatabaseSupport {
     public Iterable<ResourceStatus> listKeyValueDatabaseStatus() throws CloudException, InternalException {
         APITrace.begin(provider, "KVDB.listKeyValueDatabaseStatus");
         try {
-            ArrayList<ResourceStatus> list = new ArrayList<ResourceStatus>();
+            List<ResourceStatus> list = new ArrayList<>();
             String marker = null;
 
             do {
-                Map<String,String> parameters = provider.getStandardSimpleDBParameters(provider.getContext(), LIST_DOMAINS);
+                Map<String,String> parameters = provider.getStandardSimpleDBParameters(LIST_DOMAINS);
                 EC2Method method;
                 NodeList blocks;
                 Document doc;
@@ -415,7 +411,7 @@ public class SimpleDB implements KeyValueDatabaseSupport {
                     doc = method.invoke();
                 }
                 catch( EC2Exception e ) {
-                    throw new CloudException(e);
+                    throw new GeneralCloudException(e);
                 }
                 marker = null;
                 blocks = doc.getElementsByTagName("NextToken");
@@ -481,11 +477,11 @@ public class SimpleDB implements KeyValueDatabaseSupport {
     public Map<String,Set<KeyValuePair>> query(String queryString, boolean consistentRead) throws CloudException, InternalException {
         APITrace.begin(provider, "KVDB.query");
         try {
-            Map<String,Set<KeyValuePair>> pairs = new HashMap<String,Set<KeyValuePair>>();
+            Map<String,Set<KeyValuePair>> pairs = new HashMap<>();
             String marker = null;
 
             do {
-                Map<String,String> parameters = provider.getStandardSimpleDBParameters(provider.getContext(), SELECT);
+                Map<String,String> parameters = provider.getStandardSimpleDBParameters(SELECT);
                 NodeList blocks;
                 EC2Method method;
                 Document doc;
@@ -505,7 +501,7 @@ public class SimpleDB implements KeyValueDatabaseSupport {
                     if( code != null && code.equals("NoSuchDomain") ) {
                         return null;
                     }
-                    throw new CloudException(e);
+                    throw new GeneralCloudException(e);
                 }
                 marker = null;
                 blocks = doc.getElementsByTagName("NextToken");
@@ -580,7 +576,7 @@ public class SimpleDB implements KeyValueDatabaseSupport {
     public void removeDatabase(String domainId) throws CloudException, InternalException {
         APITrace.begin(provider, "KVDB.removeDatabase");
         try {
-            Map<String,String> parameters = provider.getStandardSimpleDBParameters(provider.getContext(), DELETE_DOMAIN);
+            Map<String,String> parameters = provider.getStandardSimpleDBParameters(DELETE_DOMAIN);
             EC2Method method;
 
             parameters.put("DomainName", domainId);
@@ -589,7 +585,7 @@ public class SimpleDB implements KeyValueDatabaseSupport {
                 method.invoke();
             }
             catch( EC2Exception e ) {
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
         }
         finally {
@@ -602,7 +598,7 @@ public class SimpleDB implements KeyValueDatabaseSupport {
         APITrace.begin(provider, "KVDB.removeKeyValuePairs");
         try {
             if( pairs != null && pairs.length > 0 ) {
-                Map<String,String> parameters = provider.getStandardSimpleDBParameters(provider.getContext(), DELETE_ATTRIBUTES);
+                Map<String,String> parameters = provider.getStandardSimpleDBParameters(DELETE_ATTRIBUTES);
                 EC2Method method;
                 int i = 0;
 
@@ -620,7 +616,7 @@ public class SimpleDB implements KeyValueDatabaseSupport {
                     method.invoke();
                 }
                 catch( EC2Exception e ) {
-                    throw new CloudException(e);
+                    throw new GeneralCloudException(e);
                 }
             }
         }
@@ -634,7 +630,7 @@ public class SimpleDB implements KeyValueDatabaseSupport {
         APITrace.begin(provider, "KVDB.removeKeyValuePairStrings");
         try {
             if( pairs != null && pairs.length > 0 ) {
-                Map<String,String> parameters = provider.getStandardSimpleDBParameters(provider.getContext(), DELETE_ATTRIBUTES);
+                Map<String,String> parameters = provider.getStandardSimpleDBParameters(DELETE_ATTRIBUTES);
                 EC2Method method;
                 int i = 0;
 
@@ -649,7 +645,7 @@ public class SimpleDB implements KeyValueDatabaseSupport {
                     method.invoke();
                 }
                 catch( EC2Exception e ) {
-                    throw new CloudException(e);
+                    throw new GeneralCloudException(e);
                 }
             }
         }
@@ -663,7 +659,7 @@ public class SimpleDB implements KeyValueDatabaseSupport {
         APITrace.begin(provider, "KVDB.replaceKeyValuePairs");
         try {
             if( pairs != null && pairs.length > 0 ) {
-                Map<String,String> parameters = provider.getStandardSimpleDBParameters(provider.getContext(), PUT_ATTRIBUTES);
+                Map<String,String> parameters = provider.getStandardSimpleDBParameters(PUT_ATTRIBUTES);
                 EC2Method method;
                 int i = 0;
 
@@ -680,7 +676,7 @@ public class SimpleDB implements KeyValueDatabaseSupport {
                     method.invoke();
                 }
                 catch( EC2Exception e ) {
-                    throw new CloudException(e);
+                    throw new GeneralCloudException(e);
                 }
             }
         }

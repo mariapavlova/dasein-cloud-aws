@@ -21,6 +21,7 @@ package org.dasein.cloud.aws.admin;
 
 import org.apache.log4j.Logger;
 import org.dasein.cloud.CloudException;
+import org.dasein.cloud.GeneralCloudException;
 import org.dasein.cloud.InternalException;
 import org.dasein.cloud.admin.Offering;
 import org.dasein.cloud.admin.Prepayment;
@@ -60,7 +61,7 @@ public class ReservedInstance implements PrepaymentSupport {
 	public @Nullable Offering getOffering(@Nonnull String offeringId) throws InternalException, CloudException {
         APITrace.begin(provider, "Prepayment.getOffering");
         try {
-            Map<String,String> parameters = provider.getStandardParameters(provider.getContext(), EC2Method.DESCRIBE_RESERVED_INSTANCES_OFFERINGS);
+            Map<String,String> parameters = provider.getStandardParameters(EC2Method.DESCRIBE_RESERVED_INSTANCES_OFFERINGS);
             EC2Method method;
             NodeList blocks;
             Document doc;
@@ -77,7 +78,7 @@ public class ReservedInstance implements PrepaymentSupport {
                     return null;
                 }
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             blocks = doc.getElementsByTagName("reservedInstancesOfferingsSet");
             for( int i=0; i<blocks.getLength(); i++ ) {
@@ -106,7 +107,7 @@ public class ReservedInstance implements PrepaymentSupport {
 	public @Nullable Prepayment getPrepayment(@Nonnull String prepaymentId) throws InternalException, CloudException {
         APITrace.begin(provider, "Prepayment.getPrepayment");
         try {
-            Map<String,String> parameters = provider.getStandardParameters(provider.getContext(), EC2Method.DESCRIBE_RESERVED_INSTANCES);
+            Map<String,String> parameters = provider.getStandardParameters(EC2Method.DESCRIBE_RESERVED_INSTANCES);
             EC2Method method;
             NodeList blocks;
             Document doc;
@@ -123,7 +124,7 @@ public class ReservedInstance implements PrepaymentSupport {
                     return null;
                 }
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             blocks = doc.getElementsByTagName("reservedInstancesSet");
             for( int i=0; i<blocks.getLength(); i++ ) {
@@ -180,8 +181,8 @@ public class ReservedInstance implements PrepaymentSupport {
 	public @Nonnull Collection<Offering> listOfferings() throws InternalException, CloudException {
         APITrace.begin(provider, "Prepayment.listOfferings");
         try {
-            Map<String,String> parameters = provider.getStandardParameters(provider.getContext(), EC2Method.DESCRIBE_RESERVED_INSTANCES_OFFERINGS);
-            List<Offering> list = new ArrayList<Offering>();
+            Map<String,String> parameters = provider.getStandardParameters(EC2Method.DESCRIBE_RESERVED_INSTANCES_OFFERINGS);
+            List<Offering> list = new ArrayList<>();
             EC2Method method;
 
             NodeList blocks;
@@ -193,7 +194,7 @@ public class ReservedInstance implements PrepaymentSupport {
             }
             catch( EC2Exception e ) {
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             blocks = doc.getElementsByTagName("reservedInstancesOfferingsSet");
             for( int i=0; i<blocks.getLength(); i++ ) {
@@ -222,7 +223,7 @@ public class ReservedInstance implements PrepaymentSupport {
 	public @Nonnull Collection<Prepayment> listPrepayments() throws InternalException, CloudException {
         APITrace.begin(provider, "Prepayment.listPrepayments");
         try {
-            Map<String,String> parameters = provider.getStandardParameters(provider.getContext(), EC2Method.DESCRIBE_RESERVED_INSTANCES);
+            Map<String,String> parameters = provider.getStandardParameters(EC2Method.DESCRIBE_RESERVED_INSTANCES);
             List<Prepayment> list = new ArrayList<Prepayment>();
             EC2Method method;
             NodeList blocks;
@@ -234,7 +235,7 @@ public class ReservedInstance implements PrepaymentSupport {
             }
             catch( EC2Exception e ) {
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             blocks = doc.getElementsByTagName("reservedInstancesSet");
             for( int i=0; i<blocks.getLength(); i++ ) {
@@ -280,7 +281,7 @@ public class ReservedInstance implements PrepaymentSupport {
 	public @Nonnull String prepay(@Nonnull String offeringId, @Nonnegative int count) throws InternalException, CloudException {
         APITrace.begin(provider, "Prepayment.prepay");
         try {
-            Map<String,String> parameters = provider.getStandardParameters(provider.getContext(), EC2Method.PURCHASE_RESERVED_INSTANCES_OFFERING);
+            Map<String,String> parameters = provider.getStandardParameters(EC2Method.PURCHASE_RESERVED_INSTANCES_OFFERING);
             EC2Method method;
             NodeList blocks;
             Document doc;
@@ -293,13 +294,13 @@ public class ReservedInstance implements PrepaymentSupport {
             }
             catch( EC2Exception e ) {
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             blocks = doc.getElementsByTagName("reservedInstancesId");
             if( blocks.getLength() > 0 ) {
                 return blocks.item(0).getFirstChild().getNodeValue().trim();
             }
-            throw new CloudException("Unable to identify newly reserved instance");
+            throw new GeneralCloudException("Unable to identify newly reserved instance");
         }
         finally {
             APITrace.end();
@@ -402,8 +403,7 @@ public class ReservedInstance implements PrepaymentSupport {
 				} 
 				catch( ParseException e ) {
 					logger.error(e);
-					e.printStackTrace();
-					throw new CloudException(e);
+					throw new GeneralCloudException(e);
 				}
 			}
 			else if( name.equals("state") ) {

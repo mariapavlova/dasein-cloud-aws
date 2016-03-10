@@ -60,8 +60,8 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 public class S3 extends AbstractBlobStoreSupport<AWSCloud> {
-    static private final Logger                                    logger              = AWSCloud.getLogger(S3.class);
-    static private final String                                    HMAC_SHA1_ALGORITHM = "HmacSHA1";
+    static private final Logger logger              = AWSCloud.getLogger(S3.class);
+    static private final String HMAC_SHA1_ALGORITHM = "HmacSHA1";
 
 
     static private final Random random = new Random();
@@ -162,12 +162,12 @@ public class S3 extends AbstractBlobStoreSupport<AWSCloud> {
                             bucketName = findFreeName(bucketName);
                         }
                         else {
-                            throw new CloudException(e);
+                            throw new GeneralCloudException(e);
                         }
                     }
                     else {
                         logger.error(e.getSummary());
-                        throw new CloudException(e);
+                        throw new GeneralCloudException(e);
                     }
                 }
             }
@@ -202,7 +202,7 @@ public class S3 extends AbstractBlobStoreSupport<AWSCloud> {
                     }
                     if( code == null || !code.equals("NoSuchBucket") ) {
                         logger.error(e.getSummary());
-                        throw new CloudException(e);
+                        throw new GeneralCloudException(e);
                     }
                 }
             }
@@ -299,7 +299,7 @@ public class S3 extends AbstractBlobStoreSupport<AWSCloud> {
         ProviderContext ctx = getProvider().getContext();
 
         if( ctx == null ) {
-            throw new CloudException("No context was set for this request");
+            throw new InternalException("No context was set for this request");
         }
         Cache<Affinity> cache = Cache.getInstance(getProvider(), "affinity", Affinity.class, CacheLevel.CLOUD_ACCOUNT, new TimePeriod<Day>(1, TimePeriod.DAY));
         Iterable<Affinity> affinities = cache.get(ctx);
@@ -315,11 +315,10 @@ public class S3 extends AbstractBlobStoreSupport<AWSCloud> {
         Constraint c = affinity.constraints.get(bucket);
 
         if( reload || c == null || c.timeout <= System.currentTimeMillis() ) {
-            S3Method method = new S3Method(getProvider(), S3Action.LOCATE_BUCKET);
             String location = null;
             S3Response response;
 
-            method = new S3Method(getProvider(), S3Action.LOCATE_BUCKET);
+            S3Method method = new S3Method(getProvider(), S3Action.LOCATE_BUCKET);
             try {
                 response = method.invoke(bucket, "?location");
             }
@@ -353,12 +352,12 @@ public class S3 extends AbstractBlobStoreSupport<AWSCloud> {
             ProviderContext ctx = getProvider().getContext();
 
             if( ctx == null ) {
-                throw new CloudException("No context was set for this request");
+                throw new InternalException("No context was set for this request");
             }
             String regionId = ctx.getRegionId();
 
             if( regionId == null ) {
-                throw new CloudException("No region was set for this request");
+                throw new InternalException("No region was set for this request");
             }
             S3Method method = new S3Method(getProvider(), S3Action.LIST_BUCKETS);
             S3Response response;
@@ -369,7 +368,7 @@ public class S3 extends AbstractBlobStoreSupport<AWSCloud> {
             }
             catch( S3Exception e ) {
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             blocks = response.document.getElementsByTagName("Bucket");
             for( int i = 0; i < blocks.getLength(); i++ ) {
@@ -418,12 +417,12 @@ public class S3 extends AbstractBlobStoreSupport<AWSCloud> {
             ProviderContext ctx = getProvider().getContext();
 
             if( ctx == null ) {
-                throw new CloudException("No context was set for this request");
+                throw new InternalException("No context was set for this request");
             }
             String regionId = ctx.getRegionId();
 
             if( regionId == null ) {
-                throw new CloudException("No region was set for this request");
+                throw new InternalException("No region was set for this request");
             }
             String myRegion = getRegion(bucketName, false);
 
@@ -431,7 +430,7 @@ public class S3 extends AbstractBlobStoreSupport<AWSCloud> {
                 return null;
             }
 
-            HashMap<String, String> parameters = new HashMap<String, String>();
+            HashMap<String, String> parameters = new HashMap<>();
             S3Response response;
             String marker = null;
             boolean done = false;
@@ -453,10 +452,10 @@ public class S3 extends AbstractBlobStoreSupport<AWSCloud> {
                     String code = e.getCode();
 
                     if( code == null || !code.equals("SignatureDoesNotMatch") ) {
-                        throw new CloudException(e);
+                        throw new GeneralCloudException(e);
                     }
                     logger.error(e.getSummary());
-                    throw new CloudException(e);
+                    throw new GeneralCloudException(e);
                 }
                 blocks = response.document.getElementsByTagName("IsTruncated");
                 if( blocks.getLength() > 0 ) {
@@ -482,7 +481,7 @@ public class S3 extends AbstractBlobStoreSupport<AWSCloud> {
                                 marker = key;
                             }
                             else if( attr.getNodeName().equalsIgnoreCase("Size") ) {
-                                size = new Storage<org.dasein.util.uom.storage.Byte>(Long.parseLong(attr.getFirstChild().getNodeValue().trim()), Storage.BYTE);
+                                size = new Storage<>(Long.parseLong(attr.getFirstChild().getNodeValue().trim()), Storage.BYTE);
                             }
                             else if( attr.getNodeName().equalsIgnoreCase("LastModified") ) {
                                 SimpleDateFormat fmt = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
@@ -493,8 +492,7 @@ public class S3 extends AbstractBlobStoreSupport<AWSCloud> {
                                 }
                                 catch( ParseException e ) {
                                     logger.error(e);
-                                    e.printStackTrace();
-                                    throw new CloudException(e);
+                                    throw new GeneralCloudException(e);
                                 }
                             }
                         }
@@ -527,22 +525,18 @@ public class S3 extends AbstractBlobStoreSupport<AWSCloud> {
         }
         catch( NullPointerException e ) {
             logger.error(e);
-            e.printStackTrace();
             throw new InternalException(e);
         }
         catch( NoSuchAlgorithmException e ) {
             logger.error(e);
-            e.printStackTrace();
             throw new InternalException(e);
         }
         catch( InvalidKeyException e ) {
             logger.error(e);
-            e.printStackTrace();
             throw new InternalException(e);
         }
         catch( UnsupportedEncodingException e ) {
             logger.error(e);
-            e.printStackTrace();
             throw new InternalException(e);
         }
         return signedUrl;
@@ -573,7 +567,7 @@ public class S3 extends AbstractBlobStoreSupport<AWSCloud> {
                             }
                         }
                         logger.error(e.getSummary() + " (" + e.getCode() + ")");
-                        throw new CloudException(e);
+                        throw new GeneralCloudException(e);
                     }
                 }
             }
@@ -596,7 +590,7 @@ public class S3 extends AbstractBlobStoreSupport<AWSCloud> {
         APITrace.begin(getProvider(), "Blob.getObjectSize");
         try {
             if( bucket == null ) {
-                throw new CloudException("Requested object size for object in null bucket");
+                throw new GeneralCloudException("Requested object size for object in null bucket");
             }
             if( object == null ) {
                 return null;
@@ -604,7 +598,7 @@ public class S3 extends AbstractBlobStoreSupport<AWSCloud> {
             ProviderContext ctx = getProvider().getContext();
 
             if( ctx == null ) {
-                throw new CloudException("No context was set for this request");
+                throw new InternalException("No context was set for this request");
             }
             if( !getRegion(bucket, false).equals(ctx.getRegionId()) ) {
                 return null;
@@ -629,7 +623,7 @@ public class S3 extends AbstractBlobStoreSupport<AWSCloud> {
 
                     if( code == null || ( !code.equals("NoSuchBucket") && !code.equals("NoSuchKey") ) ) {
                         logger.error(e.getSummary());
-                        throw new CloudException(e);
+                        throw new GeneralCloudException(e);
                     }
                 }
                 return null;
@@ -644,7 +638,7 @@ public class S3 extends AbstractBlobStoreSupport<AWSCloud> {
         ProviderContext ctx = getProvider().getContext();
 
         if( ctx == null ) {
-            throw new CloudException("No context was set for this request");
+            throw new InternalException("No context was set for this request");
         }
         int idx = bucket.lastIndexOf(".");
         String prefix, rawName;
@@ -694,7 +688,7 @@ public class S3 extends AbstractBlobStoreSupport<AWSCloud> {
         APITrace.begin(getProvider(), "Blob.get");
         try {
             if( bucket == null ) {
-                throw new CloudException("No bucket was specified");
+                throw new GeneralCloudException("No bucket was specified");
             }
             IOException lastError = null;
             int attempts = 0;
@@ -729,18 +723,17 @@ public class S3 extends AbstractBlobStoreSupport<AWSCloud> {
                 }
                 catch( S3Exception e ) {
                     logger.error(e.getSummary());
-                    throw new CloudException(e);
+                    throw new GeneralCloudException(e);
                 }
                 attempts++;
             }
             if( lastError != null ) {
                 logger.error(lastError);
-                lastError.printStackTrace();
-                throw new InternalException(lastError);
+                throw new GeneralCloudException(lastError);
             }
             else {
                 logger.error("Unable to figure out error");
-                throw new InternalException("Unknown error");
+                throw new GeneralCloudException("Unknown error");
             }
         }
         finally {
@@ -759,7 +752,7 @@ public class S3 extends AbstractBlobStoreSupport<AWSCloud> {
         }
         catch( S3Exception e ) {
             logger.error(e.getSummary());
-            throw new CloudException(e);
+            throw new GeneralCloudException(e);
         }
     }
 
@@ -768,7 +761,7 @@ public class S3 extends AbstractBlobStoreSupport<AWSCloud> {
         APITrace.begin(getProvider(), "Blob.isPublic");
         try {
             if( bucket == null ) {
-                throw new CloudException("A bucket name was not specified");
+                throw new InternalException("A bucket name was not specified");
             }
             Document acl = getAcl(bucket, object);
 
@@ -924,18 +917,18 @@ public class S3 extends AbstractBlobStoreSupport<AWSCloud> {
         PopulatorThread<Blob> populator;
 
         if( ctx == null ) {
-            throw new CloudException("No context was specified for this request");
+            throw new InternalException("No context was specified for this request");
         }
         final String regionId = ctx.getRegionId();
 
         if( regionId == null ) {
-            throw new CloudException("No region ID was specified");
+            throw new InternalException("No region ID was specified");
         }
         if( bucket != null && !getRegion(bucket, false).equals(regionId) ) {
-            throw new CloudException("No such bucket in target region: " + bucket + " in " + regionId);
+            throw new GeneralCloudException("No such bucket in target region: " + bucket + " in " + regionId);
         }
         getProvider().hold();
-        populator = new PopulatorThread<Blob>(new JiteratorPopulator<Blob>() {
+        populator = new PopulatorThread<>(new JiteratorPopulator<Blob>() {
             public void populate( @Nonnull Jiterator<Blob> iterator ) throws CloudException, InternalException {
                 try {
                     list(regionId, bucket, iterator);
@@ -987,7 +980,7 @@ public class S3 extends AbstractBlobStoreSupport<AWSCloud> {
         }
         catch( S3Exception e ) {
             logger.error(e.getSummary());
-            throw new CloudException(e);
+            throw new GeneralCloudException(e);
         }
         blocks = response.document.getElementsByTagName("Bucket");
         for( int i = 0; i < blocks.getLength(); i++ ) {
@@ -1008,7 +1001,7 @@ public class S3 extends AbstractBlobStoreSupport<AWSCloud> {
                 }
             }
             if( name == null ) {
-                throw new CloudException("Bad response from server.");
+                throw new GeneralCloudException("Bad response from server.");
             }
             if( getProvider().getEC2Provider().isAWS() ) {
                 String location = null;
@@ -1064,10 +1057,10 @@ public class S3 extends AbstractBlobStoreSupport<AWSCloud> {
                 String code = e.getCode();
 
                 if( code == null || !code.equals("SignatureDoesNotMatch") ) {
-                    throw new CloudException(e);
+                    throw new GeneralCloudException(e);
                 }
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             blocks = response.document.getElementsByTagName("IsTruncated");
             if( blocks.getLength() > 0 ) {
@@ -1104,8 +1097,7 @@ public class S3 extends AbstractBlobStoreSupport<AWSCloud> {
                             }
                             catch( ParseException e ) {
                                 logger.error(e);
-                                e.printStackTrace();
-                                throw new CloudException(e);
+                                throw new GeneralCloudException(e);
                             }
                         }
                     }
@@ -1128,12 +1120,12 @@ public class S3 extends AbstractBlobStoreSupport<AWSCloud> {
         APITrace.begin(getProvider(), "Blob.makePublic");
         try {
             if( bucket == null ) {
-                throw new CloudException("No bucket was specified for this request");
+                throw new InternalException("No bucket was specified for this request");
             }
             Document current = getAcl(bucket, object);
 
             if( current == null ) {
-                throw new CloudException("Target does not exist");
+                throw new GeneralCloudException("Target does not exist");
             }
             StringBuilder xml = new StringBuilder();
             NodeList blocks;
@@ -1286,13 +1278,13 @@ public class S3 extends AbstractBlobStoreSupport<AWSCloud> {
         APITrace.begin(getProvider(), "Blob.move");
         try {
             if( sourceBucket == null ) {
-                throw new CloudException("No source bucket was specified");
+                throw new InternalException("No source bucket was specified");
             }
             if( targetBucket == null ) {
-                throw new CloudException("No target bucket was specified");
+                throw new InternalException("No target bucket was specified");
             }
             if( object == null ) {
-                throw new CloudException("No source object was specified");
+                throw new InternalException("No source object was specified");
             }
             copy(sourceBucket, object, targetBucket, object);
             removeObject(sourceBucket, object);
@@ -1319,7 +1311,7 @@ public class S3 extends AbstractBlobStoreSupport<AWSCloud> {
                 method.invoke(bucket, object);
             }
             catch( S3Exception e ) {
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
         }
         finally {
@@ -1359,7 +1351,7 @@ public class S3 extends AbstractBlobStoreSupport<AWSCloud> {
                 }
                 catch( S3Exception e ) {
                     logger.error(e.getSummary());
-                    throw new CloudException(e);
+                    throw new GeneralCloudException(e);
                 }
             }
             finally {
@@ -1390,7 +1382,7 @@ public class S3 extends AbstractBlobStoreSupport<AWSCloud> {
                     return;
                 }
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
         }
         finally {
@@ -1403,7 +1395,7 @@ public class S3 extends AbstractBlobStoreSupport<AWSCloud> {
         APITrace.begin(getProvider(), "Blob.removeObject");
         try {
             if( bucket == null ) {
-                throw new CloudException("No bucket was specified for this request");
+                throw new InternalException("No bucket was specified for this request");
             }
             S3Method method = new S3Method(getProvider(), S3Action.DELETE_OBJECT);
 
@@ -1417,7 +1409,7 @@ public class S3 extends AbstractBlobStoreSupport<AWSCloud> {
                     return;
                 }
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
         }
         finally {
@@ -1473,7 +1465,7 @@ public class S3 extends AbstractBlobStoreSupport<AWSCloud> {
         APITrace.begin(getProvider(), "Blob.renameObject");
         try {
             if( bucket == null ) {
-                throw new CloudException("No bucket was specified");
+                throw new InternalException("No bucket was specified");
             }
             copy(bucket, object, bucket, newName);
             removeObject(bucket, object);
@@ -1495,7 +1487,7 @@ public class S3 extends AbstractBlobStoreSupport<AWSCloud> {
             }
             catch( S3Exception e ) {
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
         }
         finally {
@@ -1526,7 +1518,7 @@ public class S3 extends AbstractBlobStoreSupport<AWSCloud> {
     	APITrace.begin(getProvider(), "Bucket.updateTags");
     	try {
             List<Tag> tagsList = getTags( bucketName);
-    		if (tagsList == null) tagsList = new ArrayList<Tag>();
+    		if (tagsList == null) tagsList = new ArrayList<>();
 
     		for (int i = 0; i < tags.length ; i++ )
     			tagsList.add(new Tag (tags[i].getKey(), tags[i].getValue()));

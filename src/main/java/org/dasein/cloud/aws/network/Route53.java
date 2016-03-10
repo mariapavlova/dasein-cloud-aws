@@ -20,10 +20,7 @@
 package org.dasein.cloud.aws.network;
 
 import org.apache.http.HttpStatus;
-import org.dasein.cloud.CloudException;
-import org.dasein.cloud.InternalException;
-import org.dasein.cloud.ProviderContext;
-import org.dasein.cloud.ResourceStatus;
+import org.dasein.cloud.*;
 import org.dasein.cloud.aws.AWSCloud;
 import org.dasein.cloud.aws.compute.EC2Exception;
 import org.dasein.cloud.identity.ServiceAction;
@@ -64,7 +61,7 @@ public class Route53 implements DNSSupport {
             DNSZone zone = getDnsZone(providerDnsZoneId);
 
             if( zone == null ) {
-                throw new CloudException("Invalid DNS zone: " + providerDnsZoneId);
+                throw new GeneralCloudException("Invalid DNS zone: " + providerDnsZoneId);
             }
             Route53Method method;
 
@@ -115,14 +112,14 @@ public class Route53 implements DNSSupport {
                 method.invoke(xml.toString());
             }
             catch( EC2Exception e ) {
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             for( DNSRecord record : listDnsRecords(providerDnsZoneId, recordType, null) ) {
                 if( record != null && record.getType().equals(recordType) && record.getName().equals(name) ) {
                     return record;
                 }
             }
-            throw new CloudException("Unable to identified newly added record");
+            throw new GeneralCloudException("Unable to identified newly added record");
         }
         finally {
             APITrace.end();
@@ -136,7 +133,7 @@ public class Route53 implements DNSSupport {
             ProviderContext ctx = provider.getContext();
 
             if( ctx == null ) {
-                throw new CloudException("No context was configured for this request");
+                throw new InternalException("No context was configured for this request");
             }
             Route53Method method;
             NodeList blocks;
@@ -161,7 +158,7 @@ public class Route53 implements DNSSupport {
                 doc = method.invoke(xml.toString());
             }
             catch( EC2Exception e ) {
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             ArrayList<String> ns = new ArrayList<String>();
             blocks = doc.getElementsByTagName("NameServer");
@@ -182,7 +179,7 @@ public class Route53 implements DNSSupport {
                     return zone.getProviderDnsZoneId();
                 }
             }
-            throw new CloudException("Unable to identify newly created zone");
+            throw new GeneralCloudException("Unable to identify newly created zone");
         }
         finally {
             APITrace.end();
@@ -245,7 +242,7 @@ public class Route53 implements DNSSupport {
                     method.invoke(xml.toString());
                 }
                 catch( EC2Exception e ) {
-                    throw new CloudException(e);
+                    throw new GeneralCloudException(e);
                 }
             }
         }
@@ -265,7 +262,7 @@ public class Route53 implements DNSSupport {
                 method.invoke();
             }
             catch( EC2Exception e ) {
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
         }
         finally {
@@ -280,7 +277,7 @@ public class Route53 implements DNSSupport {
             ProviderContext ctx = provider.getContext();
 
             if( ctx == null ) {
-                throw new CloudException("No context was configured for this request");
+                throw new InternalException("No context was configured for this request");
             }
             Route53Method method;
             NodeList blocks;
@@ -304,7 +301,7 @@ public class Route53 implements DNSSupport {
                 else if( code != null && code.equals("NoSuchHostedZone") ) {
                     return null;
                 }
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             ArrayList<String> ns = new ArrayList<String>();
             blocks = doc.getElementsByTagName("NameServer");
@@ -360,7 +357,7 @@ public class Route53 implements DNSSupport {
         final ProviderContext ctx = provider.getContext();
 
         if( ctx == null ) {
-            throw new CloudException("No context was configured for this request");
+            throw new InternalException("No context was configured for this request");
         }
         PopulatorThread<DNSRecord> populator;
         final String zoneId = providerDnsZoneId;
@@ -409,7 +406,7 @@ public class Route53 implements DNSSupport {
                 doc = method.invoke();
             }
             catch( EC2Exception e ) {
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             blocks = doc.getElementsByTagName("ResourceRecordSet");
             for( int i=0; i<blocks.getLength(); i++ ) {
@@ -448,7 +445,7 @@ public class Route53 implements DNSSupport {
         final ProviderContext ctx = provider.getContext();
 
         if( ctx == null ) {
-            throw new CloudException("No context was configured for this request");
+            throw new InternalException("No context was configured for this request");
         }
         PopulatorThread<ResourceStatus> populator;
 
@@ -472,7 +469,7 @@ public class Route53 implements DNSSupport {
         final ProviderContext ctx = provider.getContext();
 
         if( ctx == null ) {
-            throw new CloudException("No context was configured for this request");
+            throw new InternalException("No context was configured for this request");
         }
         PopulatorThread<DNSZone> populator;
         
@@ -532,7 +529,7 @@ public class Route53 implements DNSSupport {
                 doc = method.invoke();
             }
             catch( EC2Exception e ) {
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             blocks = doc.getElementsByTagName("HostedZone");
             for( int i=0; i<blocks.getLength(); i++ ) {
@@ -571,7 +568,7 @@ public class Route53 implements DNSSupport {
                 doc = method.invoke();
             }
             catch( EC2Exception e ) {
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             blocks = doc.getElementsByTagName("HostedZone");
             for( int i=0; i<blocks.getLength(); i++ ) {
@@ -614,7 +611,7 @@ public class Route53 implements DNSSupport {
                 if( code != null && (code.equals("SubscriptionCheckFailed") || code.equals("AuthFailure") || code.equals("SignatureDoesNotMatch") || code.equals("InvalidClientTokenId") || code.equals("OptInRequired")) ) {
                     return false;
                 }
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             return true;
         }

@@ -29,6 +29,7 @@ import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.entity.StringEntity;
 import org.apache.log4j.Logger;
 import org.dasein.cloud.CloudException;
+import org.dasein.cloud.GeneralCloudException;
 import org.dasein.cloud.InternalException;
 import org.dasein.cloud.ProviderContext;
 import org.dasein.cloud.aws.AWSCloud;
@@ -184,7 +185,7 @@ public class CloudFrontMethod {
                         input = entity.getContent();
                     }
                     catch( IOException e ) {
-                        throw new CloudException(e);
+                        throw new GeneralCloudException(e);
                     }
                     try {
                         response.document = parseResponse(input);
@@ -196,8 +197,7 @@ public class CloudFrontMethod {
                 }
                 catch( IOException e ) {
                     logger.error(e);
-                    e.printStackTrace();
-                    throw new CloudException(e);
+                    throw new GeneralCloudException(e);
                 }
             }
             else if( status == HttpStatus.SC_NO_CONTENT ) {
@@ -215,7 +215,7 @@ public class CloudFrontMethod {
                             msg = "The cloud service encountered a server error while processing your request.";
                         }
                         logger.error(msg);
-                        throw new CloudException(msg);
+                        throw new GeneralCloudException(msg);
                     }
                     else {
                         try { Thread.sleep(5000L); }
@@ -235,7 +235,7 @@ public class CloudFrontMethod {
                         input = entity.getContent();
                     }
                     catch( IOException e ) {
-                        throw new CloudException(e);
+                        throw new GeneralCloudException(e);
                     }
                     Document doc;
 
@@ -276,16 +276,15 @@ public class CloudFrontMethod {
                             requestId = id.getFirstChild().getNodeValue().trim();
                         }
                         if( message == null ) {
-                            throw new CloudException("Unable to identify error condition: " + status + "/" + requestId + "/" + code);
+                            throw new GeneralCloudException("Unable to identify error condition: " + status + "/" + requestId + "/" + code);
                         }
                         throw new CloudFrontException(status, requestId, type, code, message);
                     }
-                    throw new CloudException("Unable to parse error.");
+                    throw new GeneralCloudException("Unable to parse error.");
                 }
                 catch( IOException e ) {
                     logger.error(e);
-                    e.printStackTrace();
-                    throw new CloudException(e);
+                    throw new GeneralCloudException(e);
                 }
             }
         } finally {
@@ -311,18 +310,15 @@ public class CloudFrontMethod {
 		}
 		catch( IOException e ) {
 			logger.error(e);
-			e.printStackTrace();
-			throw new CloudException(e);
+			throw new GeneralCloudException(e);
 		}
 		catch( ParserConfigurationException e ) {
 			logger.error(e);
-			e.printStackTrace();
-			throw new CloudException(e);
+			throw new GeneralCloudException(e);
 		}
 		catch( SAXException e ) {
 			logger.error(e);
-			e.printStackTrace();
-			throw new CloudException(e);
+			throw new GeneralCloudException(e);
 	    }				
 	}
 }

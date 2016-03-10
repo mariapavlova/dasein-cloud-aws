@@ -21,6 +21,7 @@ package org.dasein.cloud.aws.identity;
 
 import org.apache.log4j.Logger;
 import org.dasein.cloud.CloudException;
+import org.dasein.cloud.GeneralCloudException;
 import org.dasein.cloud.InternalException;
 import org.dasein.cloud.aws.AWSCloud;
 import org.dasein.cloud.aws.compute.EC2Exception;
@@ -68,7 +69,7 @@ public class IAM extends AbstractIdentityAndAccessSupport<AWSCloud> {
     }
 
     protected Document invoke(String action, Map<String, String> extraParameters) throws CloudException, InternalException {
-        Map<String, String> parameters = getProvider().getStandardParameters(getContext(), action, IAMMethod.VERSION);
+        Map<String, String> parameters = getProvider().getStandardParameters(action, IAMMethod.VERSION);
         if( extraParameters != null ) {
             parameters.putAll(extraParameters);
         }
@@ -112,12 +113,12 @@ public class IAM extends AbstractIdentityAndAccessSupport<AWSCloud> {
         try {
             CloudUser user = getUser(providerUserId);
             if( user == null ) {
-                throw new CloudException("No such user: " + providerUserId);
+                throw new GeneralCloudException("No such user: " + providerUserId);
             }
             
             CloudGroup group = getGroup(providerGroupId);
             if( group == null ) {
-                throw new CloudException("No such group: " + providerGroupId);
+                throw new GeneralCloudException("No such group: " + providerGroupId);
             }
 
             Map<String,String> parameters = new HashMap<>();
@@ -134,7 +135,7 @@ public class IAM extends AbstractIdentityAndAccessSupport<AWSCloud> {
             }
             catch( EC2Exception e ) {
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
         }
         finally {
@@ -182,11 +183,11 @@ public class IAM extends AbstractIdentityAndAccessSupport<AWSCloud> {
                     }                    
                 }
                 logger.error("No group was created as a result of the request");
-                throw new CloudException("No group was created as a result of the request");
+                throw new GeneralCloudException("No group was created as a result of the request");
             }
             catch( EC2Exception e ) {
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
         }
         finally {
@@ -226,11 +227,11 @@ public class IAM extends AbstractIdentityAndAccessSupport<AWSCloud> {
                     }
                 }
                 logger.error("No user was created as a result of the request");
-                throw new CloudException("No user was created as a result of the request");
+                throw new GeneralCloudException("No user was created as a result of the request");
             }
             catch( EC2Exception e ) {
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
         }
         finally {
@@ -246,7 +247,7 @@ public class IAM extends AbstractIdentityAndAccessSupport<AWSCloud> {
             if( providerUserId != null ) {
                 CloudUser user = getUser(providerUserId);
                 if (user == null) {
-                    throw new CloudException("No such user: " + providerUserId);
+                    throw new GeneralCloudException("No such user: " + providerUserId);
                 }
                 parameters.put("UserName", user.getUserName());
             }
@@ -274,11 +275,11 @@ public class IAM extends AbstractIdentityAndAccessSupport<AWSCloud> {
                     }
                 }
                 logger.error("No access key was created as a result of the request");
-                throw new CloudException("No access key was created as a result of the request");
+                throw new GeneralCloudException("No access key was created as a result of the request");
             }
             catch( EC2Exception e ) {
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
         }
         finally {
@@ -292,7 +293,7 @@ public class IAM extends AbstractIdentityAndAccessSupport<AWSCloud> {
         try {
             CloudUser user = getUser(providerUserId);
             if( user == null ) {
-                throw new CloudException("No such user: " + providerUserId);
+                throw new GeneralCloudException("No such user: " + providerUserId);
             }
             
             Map<String,String> parameters = new HashMap<>();
@@ -311,12 +312,12 @@ public class IAM extends AbstractIdentityAndAccessSupport<AWSCloud> {
                 NodeList blocks = doc.getElementsByTagName("LoginProfile");
                 if( blocks.getLength() < 1 ) {
                     logger.error("No console access was created as a result of the request");
-                    throw new CloudException("No console access was created as a result of the request");
+                    throw new GeneralCloudException("No console access was created as a result of the request");
                 }
             }
             catch( EC2Exception e ) {
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
         }
         finally {
@@ -345,7 +346,7 @@ public class IAM extends AbstractIdentityAndAccessSupport<AWSCloud> {
         try {
             CloudGroup group = getGroup(providerGroupId);
             if( group == null ) {
-                throw new CloudException("No such group: " + providerGroupId);
+                throw new GeneralCloudException("No such group: " + providerGroupId);
             }
             Map<String,String> parameters = new HashMap<>();
             parameters.put("GroupName", group.getName());
@@ -376,14 +377,14 @@ public class IAM extends AbstractIdentityAndAccessSupport<AWSCloud> {
             }
             catch( EC2Exception e ) {
                 if( e.getStatus() == 404 ) {
-                    throw new CloudException("No such policy " + providerPolicyId, e);
+                    throw new GeneralCloudException("No such policy " + providerPolicyId, e);
                 }
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             catch( JSONException e ) {
                 logger.error("Failed to parse policy statement: " + e.getMessage());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             catch( UnsupportedEncodingException e ) {
                 logger.error("Unknown encoding in utf-8: " + e.getMessage());
@@ -435,7 +436,7 @@ public class IAM extends AbstractIdentityAndAccessSupport<AWSCloud> {
         }
         catch( EC2Exception e ) {
             logger.error(e.getSummary());
-            throw new CloudException(e);
+            throw new GeneralCloudException(e);
         }
         finally {
             APITrace.end();
@@ -466,7 +467,7 @@ public class IAM extends AbstractIdentityAndAccessSupport<AWSCloud> {
         }
         catch( EC2Exception e ) {
             logger.error(e.getSummary());
-            throw new CloudException(e);
+            throw new GeneralCloudException(e);
         }
         finally {
             APITrace.end();
@@ -518,7 +519,7 @@ public class IAM extends AbstractIdentityAndAccessSupport<AWSCloud> {
             return null;
         } catch (EC2Exception e) {
             logger.error(e.getSummary());
-            throw new CloudException(e);
+            throw new GeneralCloudException(e);
         }
         finally {
             APITrace.end();
@@ -592,11 +593,11 @@ public class IAM extends AbstractIdentityAndAccessSupport<AWSCloud> {
             return new CloudPolicyRule[0];
         } catch (EC2Exception e) {
             logger.error(e.getSummary());
-            throw new CloudException(e);
+            throw new GeneralCloudException(e);
         }
         catch( JSONException e ) {
             logger.error("Failed to parse policy statement: " + e.getMessage());
-            throw new CloudException(e);
+            throw new GeneralCloudException(e);
         }
         catch( UnsupportedEncodingException e ) {
             logger.error("Unknown encoding in utf-8: " + e.getMessage());
@@ -612,7 +613,7 @@ public class IAM extends AbstractIdentityAndAccessSupport<AWSCloud> {
         try {
             CloudUser user = getUser(providerUserId);
             if( user == null ) {
-                throw new CloudException("No such user: " + providerUserId);
+                throw new GeneralCloudException("No such user: " + providerUserId);
             }
 
             Map<String,String> parameters = new HashMap<>();
@@ -644,14 +645,14 @@ public class IAM extends AbstractIdentityAndAccessSupport<AWSCloud> {
         }
         catch( EC2Exception e ) {
             if( e.getStatus() == 404 ) {
-                throw new CloudException("No such policy " + providerPolicyId, e);
+                throw new GeneralCloudException("No such policy " + providerPolicyId, e);
             }
             logger.error(e.getSummary());
-            throw new CloudException(e);
+            throw new GeneralCloudException(e);
         }
         catch( JSONException e ) {
             logger.error("Failed to parse policy statement: " + e.getMessage());
-            throw new CloudException(e);
+            throw new GeneralCloudException(e);
         }
         catch( UnsupportedEncodingException e ) {
             logger.error("Unknown encoding in utf-8: " + e.getMessage());
@@ -667,7 +668,7 @@ public class IAM extends AbstractIdentityAndAccessSupport<AWSCloud> {
         try {
             CloudUser user = getUser(providerUserId);
             if( user == null ) {
-                throw new CloudException("No such user: " + providerUserId);
+                throw new GeneralCloudException("No such user: " + providerUserId);
             }
 
             Map<String,String> parameters = new HashMap<>();
@@ -683,7 +684,7 @@ public class IAM extends AbstractIdentityAndAccessSupport<AWSCloud> {
                 return null;
             }
             logger.error(e.getSummary());
-            throw new CloudException(e);
+            throw new GeneralCloudException(e);
         }
         finally {
             APITrace.end();
@@ -695,7 +696,7 @@ public class IAM extends AbstractIdentityAndAccessSupport<AWSCloud> {
         try {
             CloudGroup group = getGroup(providerGroupId);
             if( group == null ) {
-                throw new CloudException("No such group: " + providerGroupId);
+                throw new GeneralCloudException("No such group: " + providerGroupId);
             }
 
             Map<String,String> parameters = new HashMap<>();
@@ -711,7 +712,7 @@ public class IAM extends AbstractIdentityAndAccessSupport<AWSCloud> {
                 return null;
             }
             logger.error(e.getSummary());
-            throw new CloudException(e);
+            throw new GeneralCloudException(e);
         }
         finally {
             APITrace.end();
@@ -759,7 +760,7 @@ public class IAM extends AbstractIdentityAndAccessSupport<AWSCloud> {
         }
         catch( EC2Exception e ) {
             logger.error(e.getSummary());
-            throw new CloudException(e);
+            throw new GeneralCloudException(e);
         }
         finally {
             APITrace.end();
@@ -772,7 +773,7 @@ public class IAM extends AbstractIdentityAndAccessSupport<AWSCloud> {
         try {
             CloudUser user = getUser(providerUserId);
             if( user == null ) {
-                throw new CloudException("No such user: " + providerUserId);
+                throw new GeneralCloudException("No such user: " + providerUserId);
             }
             
             Map<String,String> parameters = new HashMap<>();
@@ -794,7 +795,7 @@ public class IAM extends AbstractIdentityAndAccessSupport<AWSCloud> {
         }
         catch( EC2Exception e ) {
             logger.error(e.getSummary());
-            throw new CloudException(e);
+            throw new GeneralCloudException(e);
         }
         finally {
             APITrace.end();
@@ -806,7 +807,7 @@ public class IAM extends AbstractIdentityAndAccessSupport<AWSCloud> {
         try {
             CloudGroup group = getGroup(providerGroupId);
             if( group == null ) {
-                throw new CloudException("No such group: " + providerGroupId);
+                throw new GeneralCloudException("No such group: " + providerGroupId);
             }
             List<String> names = new ArrayList<>();
 
@@ -838,7 +839,7 @@ public class IAM extends AbstractIdentityAndAccessSupport<AWSCloud> {
         }
         catch( EC2Exception e ) {
             logger.error(e.getSummary());
-            throw new CloudException(e);
+            throw new GeneralCloudException(e);
         }
         finally {
             APITrace.end();
@@ -1089,7 +1090,7 @@ public class IAM extends AbstractIdentityAndAccessSupport<AWSCloud> {
         try {
             CloudUser user = getUser(providerUserId);
             if( user == null ) {
-                throw new CloudException("No such user: " + providerUserId);
+                throw new GeneralCloudException("No such user: " + providerUserId);
             }
             List<String> names = new ArrayList<>();
 
@@ -1118,7 +1119,7 @@ public class IAM extends AbstractIdentityAndAccessSupport<AWSCloud> {
         }
         catch( EC2Exception e ) {
             logger.error(e.getSummary());
-            throw new CloudException(e);
+            throw new GeneralCloudException(e);
         }
         finally {
             APITrace.end();
@@ -1131,7 +1132,7 @@ public class IAM extends AbstractIdentityAndAccessSupport<AWSCloud> {
         try {
             CloudGroup group = getGroup(inProviderGroupId);
             if( group == null ) {
-                throw new CloudException("No such group: " + inProviderGroupId);
+                throw new GeneralCloudException("No such group: " + inProviderGroupId);
             }
 
             List<CloudUser> users = new ArrayList<>();
@@ -1153,7 +1154,7 @@ public class IAM extends AbstractIdentityAndAccessSupport<AWSCloud> {
         }
         catch( EC2Exception e ) {
             logger.error(e.getSummary());
-            throw new CloudException(e);
+            throw new GeneralCloudException(e);
         }
         finally {
             APITrace.end();
@@ -1185,7 +1186,7 @@ public class IAM extends AbstractIdentityAndAccessSupport<AWSCloud> {
         }
         catch( EC2Exception e ) {
             logger.error(e.getSummary());
-            throw new CloudException(e);
+            throw new GeneralCloudException(e);
         }
         finally {
             APITrace.end();
@@ -1295,7 +1296,7 @@ public class IAM extends AbstractIdentityAndAccessSupport<AWSCloud> {
             if( providerUserId != null ) {
                 CloudUser user = getUser(providerUserId);
                 if (user == null) {
-                    throw new CloudException("No such user: " + providerUserId);
+                    throw new GeneralCloudException("No such user: " + providerUserId);
                 }
                 parameters.put("UserName", user.getUserName());
             }
@@ -1307,7 +1308,7 @@ public class IAM extends AbstractIdentityAndAccessSupport<AWSCloud> {
         }
         catch( EC2Exception e ) {
             logger.error(e.getSummary());
-            throw new CloudException(e);
+            throw new GeneralCloudException(e);
         }
         finally {
             APITrace.end();
@@ -1320,7 +1321,7 @@ public class IAM extends AbstractIdentityAndAccessSupport<AWSCloud> {
         try {
             CloudUser user = getUser(providerUserId);
             if( user == null ) {
-                throw new CloudException("No such user: " + providerUserId);
+                throw new GeneralCloudException("No such user: " + providerUserId);
             }
             Map<String,String> parameters = new HashMap<>();
             parameters.put("UserName", user.getUserName());
@@ -1331,7 +1332,7 @@ public class IAM extends AbstractIdentityAndAccessSupport<AWSCloud> {
         }
         catch( EC2Exception e ) {
             logger.error(e.getSummary());
-            throw new CloudException(e);
+            throw new GeneralCloudException(e);
         }
         finally {
             APITrace.end();
@@ -1344,7 +1345,7 @@ public class IAM extends AbstractIdentityAndAccessSupport<AWSCloud> {
         try {
             CloudGroup group = getGroup(providerGroupId);
             if( group == null ) {
-                throw new CloudException("No such group: " + providerGroupId);
+                throw new GeneralCloudException("No such group: " + providerGroupId);
             }
             Map<String,String> parameters = new HashMap<>();
             parameters.put("GroupName", group.getName());
@@ -1355,7 +1356,7 @@ public class IAM extends AbstractIdentityAndAccessSupport<AWSCloud> {
         }
         catch( EC2Exception e ) {
             logger.error(e.getSummary());
-            throw new CloudException(e);
+            throw new GeneralCloudException(e);
         }
         finally {
             APITrace.end();
@@ -1367,7 +1368,7 @@ public class IAM extends AbstractIdentityAndAccessSupport<AWSCloud> {
         try {
             CloudGroup group = getGroup(providerGroupId);
             if( group == null ) {
-                throw new CloudException("No such group: " + providerGroupId);
+                throw new GeneralCloudException("No such group: " + providerGroupId);
             }
 
             Map<String,String> parameters = new HashMap<>();
@@ -1380,7 +1381,7 @@ public class IAM extends AbstractIdentityAndAccessSupport<AWSCloud> {
         }
         catch( EC2Exception e ) {
             logger.error(e.getSummary());
-            throw new CloudException(e);
+            throw new GeneralCloudException(e);
         }
         finally {
             APITrace.end();
@@ -1394,7 +1395,7 @@ public class IAM extends AbstractIdentityAndAccessSupport<AWSCloud> {
         try {
             CloudUser user = getUser(providerUserId);
             if( user == null ) {
-                throw new CloudException("No such user: " + providerUserId);
+                throw new GeneralCloudException("No such user: " + providerUserId);
             }
             Map<String,String> parameters = new HashMap<>();
             parameters.put("UserName", user.getUserName());
@@ -1408,7 +1409,7 @@ public class IAM extends AbstractIdentityAndAccessSupport<AWSCloud> {
         }
         catch( EC2Exception e ) {
             logger.error(e.getSummary());
-            throw new CloudException(e);
+            throw new GeneralCloudException(e);
         }
         finally {
             APITrace.end();
@@ -1420,7 +1421,7 @@ public class IAM extends AbstractIdentityAndAccessSupport<AWSCloud> {
         try {
             CloudUser user = getUser(providerUserId);
             if( user == null ) {
-                throw new CloudException("No such user: " + providerUserId);
+                throw new GeneralCloudException("No such user: " + providerUserId);
             }
 
             Map<String,String> parameters = new HashMap<>();
@@ -1433,7 +1434,7 @@ public class IAM extends AbstractIdentityAndAccessSupport<AWSCloud> {
         }
         catch( EC2Exception e ) {
             logger.error(e.getSummary());
-            throw new CloudException(e);
+            throw new GeneralCloudException(e);
         }
         finally {
             APITrace.end();
@@ -1447,12 +1448,12 @@ public class IAM extends AbstractIdentityAndAccessSupport<AWSCloud> {
         try {
             CloudUser user = getUser(providerUserId);
             if( user == null ) {
-                throw new CloudException("No such user: " + providerUserId);
+                throw new GeneralCloudException("No such user: " + providerUserId);
             }
 
             CloudGroup group = getGroup(providerGroupId);
             if( group == null ) {
-                throw new CloudException("No such group: " + providerGroupId);
+                throw new GeneralCloudException("No such group: " + providerGroupId);
             }
 
             Map<String,String> parameters = new HashMap<>();
@@ -1465,7 +1466,7 @@ public class IAM extends AbstractIdentityAndAccessSupport<AWSCloud> {
         }
         catch( EC2Exception e ) {
             logger.error(e.getSummary());
-            throw new CloudException(e);
+            throw new GeneralCloudException(e);
         }
         finally {
             APITrace.end();
@@ -1478,7 +1479,7 @@ public class IAM extends AbstractIdentityAndAccessSupport<AWSCloud> {
         try {
             CloudGroup group = getGroup(providerGroupId);
             if( group == null ) {
-                throw new CloudException("No such group: " + providerGroupId);
+                throw new GeneralCloudException("No such group: " + providerGroupId);
             }
 
             Map<String,String> parameters = new HashMap<>();
@@ -1496,12 +1497,12 @@ public class IAM extends AbstractIdentityAndAccessSupport<AWSCloud> {
             NodeList blocks = doc.getElementsByTagName("Group");
             if( blocks.getLength() < 1 ) {
                 logger.error("No group was updated as a result of the request");
-                throw new CloudException("No group was updated as a result of the request");
+                throw new GeneralCloudException("No group was updated as a result of the request");
             }
         }
         catch( EC2Exception e ) {
             logger.error(e.getSummary());
-            throw new CloudException(e);
+            throw new GeneralCloudException(e);
         }
         finally {
             APITrace.end();
@@ -1541,7 +1542,7 @@ public class IAM extends AbstractIdentityAndAccessSupport<AWSCloud> {
         }
         catch( EC2Exception e ) {
             logger.error(e.getSummary());
-            throw new CloudException(e);
+            throw new GeneralCloudException(e);
         }
         finally {
             APITrace.end();
@@ -1596,7 +1597,7 @@ public class IAM extends AbstractIdentityAndAccessSupport<AWSCloud> {
         try {
             CloudUser user = getUser(providerUserId);
             if( user == null ) {
-                throw new CloudException("No such user: " + providerUserId);
+                throw new GeneralCloudException("No such user: " + providerUserId);
             }
 
             Map<String,String> parameters = new HashMap<>();
@@ -1614,12 +1615,12 @@ public class IAM extends AbstractIdentityAndAccessSupport<AWSCloud> {
             NodeList blocks = doc.getElementsByTagName("User");
             if( blocks.getLength() < 1 ) {
                 logger.error("No user was updated as a result of the request");
-                throw new CloudException("No user was updated as a result of the request");
+                throw new GeneralCloudException("No user was updated as a result of the request");
             }
         }
         catch( EC2Exception e ) {
             logger.error(e.getSummary());
-            throw new CloudException(e);
+            throw new GeneralCloudException(e);
         }
         finally {
             APITrace.end();
@@ -1635,7 +1636,7 @@ public class IAM extends AbstractIdentityAndAccessSupport<AWSCloud> {
             if( providerUserId != null ) {
                 CloudUser user = getUser(providerUserId);
                 if (user == null) {
-                    throw new CloudException("No such user: " + providerUserId);
+                    throw new GeneralCloudException("No such user: " + providerUserId);
                 }
                 parameters.put("UserName", user.getUserName());
             }
@@ -1651,7 +1652,7 @@ public class IAM extends AbstractIdentityAndAccessSupport<AWSCloud> {
             }
             catch( EC2Exception e ) {
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
         }
         finally {
@@ -1679,7 +1680,7 @@ public class IAM extends AbstractIdentityAndAccessSupport<AWSCloud> {
                 CloudUser user = getUser(providerUserId);
 
                 if (user == null) {
-                    throw new CloudException("No such user: " + providerUserId);
+                    throw new GeneralCloudException("No such user: " + providerUserId);
                 }
                 parameters.put("UserName", user.getUserName());
             }
@@ -1701,7 +1702,7 @@ public class IAM extends AbstractIdentityAndAccessSupport<AWSCloud> {
             }
             catch( EC2Exception e ) {
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
         }
         finally {
@@ -1858,7 +1859,7 @@ public class IAM extends AbstractIdentityAndAccessSupport<AWSCloud> {
         }
         catch( EC2Exception e ) {
             logger.error(e.getSummary());
-            throw new CloudException(e);
+            throw new GeneralCloudException(e);
         }
         finally {
             APITrace.end();
@@ -1880,7 +1881,7 @@ public class IAM extends AbstractIdentityAndAccessSupport<AWSCloud> {
         try {
             CloudUser user = getUser(providerUserId);
             if (user == null) {
-                throw new CloudException("No such user: " + providerUserId);
+                throw new GeneralCloudException("No such user: " + providerUserId);
             }
 
             Map<String, String> parameters = new HashMap<>();
@@ -1907,7 +1908,7 @@ public class IAM extends AbstractIdentityAndAccessSupport<AWSCloud> {
         try {
             CloudGroup group = getGroup(providerGroupId);
             if (group == null) {
-                throw new CloudException("No such group: " + providerGroupId);
+                throw new GeneralCloudException("No such group: " + providerGroupId);
             }
 
             Map<String, String> parameters = new HashMap<>();

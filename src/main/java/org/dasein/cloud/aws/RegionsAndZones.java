@@ -21,12 +21,14 @@ package org.dasein.cloud.aws;
 
 import org.apache.log4j.Logger;
 import org.dasein.cloud.CloudException;
+import org.dasein.cloud.GeneralCloudException;
 import org.dasein.cloud.InternalException;
-import org.dasein.cloud.ProviderContext;
 import org.dasein.cloud.aws.compute.EC2Exception;
-import org.dasein.cloud.aws.compute.EC2Instance;
 import org.dasein.cloud.aws.compute.EC2Method;
-import org.dasein.cloud.dc.*;
+import org.dasein.cloud.dc.AbstractDataCenterServices;
+import org.dasein.cloud.dc.DataCenter;
+import org.dasein.cloud.dc.DataCenterCapabilities;
+import org.dasein.cloud.dc.Region;
 import org.dasein.cloud.util.APITrace;
 import org.dasein.cloud.util.Cache;
 import org.dasein.cloud.util.CacheLevel;
@@ -87,7 +89,7 @@ public class RegionsAndZones extends AbstractDataCenterServices<AWSCloud> {
             if( getProvider().getEC2Provider().isStorage() ) {
                 return (zoneId.equals(oneZoneId) ? getZone() : null);
             }
-            Map<String,String> parameters = getProvider().getStandardParameters(getProvider().getContext(), DESCRIBE_AVAILABILITY_ZONES);
+            Map<String,String> parameters = getProvider().getStandardParameters(DESCRIBE_AVAILABILITY_ZONES);
             EC2Method method;
             NodeList blocks;
             Document doc;
@@ -111,7 +113,7 @@ public class RegionsAndZones extends AbstractDataCenterServices<AWSCloud> {
                     }
                 }
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             blocks = doc.getElementsByTagName("availabilityZoneInfo");
             for( int i=0; i<blocks.getLength(); i++ ) {
@@ -167,7 +169,7 @@ public class RegionsAndZones extends AbstractDataCenterServices<AWSCloud> {
             if( getProvider().getEC2Provider().isStorage() ) {
                 return (regionId.equals(oneRegionId) ? getRegion() : null);
             }
-            Map<String,String> parameters = getProvider().getStandardParameters(getProvider().getContext(), DESCRIBE_REGIONS);
+            Map<String,String> parameters = getProvider().getStandardParameters(DESCRIBE_REGIONS);
             NodeList blocks, regions;
             EC2Method method;
             Document doc;
@@ -191,7 +193,7 @@ public class RegionsAndZones extends AbstractDataCenterServices<AWSCloud> {
                     }
                 }
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             blocks = doc.getElementsByTagName("regionInfo");
             for( int i=0; i<blocks.getLength(); i++ ) {
@@ -219,18 +221,13 @@ public class RegionsAndZones extends AbstractDataCenterServices<AWSCloud> {
 	public Collection<DataCenter>  listDataCenters(String regionId) throws InternalException, CloudException {
         APITrace.begin(getProvider(), "DC.listDataCenters");
         try {
-            ProviderContext ctx = getProvider().getContext();
-
-            if( ctx == null ) {
-                throw new CloudException("No context was set for this request");
-            }
             Cache<DataCenter> cache = null;
             Collection<DataCenter> dataCenters;
-            String originalRegionId = ctx.getRegionId();
+            String originalRegionId = getContext().getRegionId();
 
             if( regionId.equals(originalRegionId) ) {
                 cache = Cache.getInstance(getProvider(), "dataCenters", DataCenter.class, CacheLevel.REGION_ACCOUNT);
-                dataCenters = (Collection<DataCenter>)cache.get(ctx);
+                dataCenters = (Collection<DataCenter>)cache.get(getContext());
                 if( dataCenters != null ) {
                     return dataCenters;
                 }
@@ -239,21 +236,20 @@ public class RegionsAndZones extends AbstractDataCenterServices<AWSCloud> {
                 if( regionId.equals(oneRegionId) ) {
                     return Collections.singletonList(getZone());
                 }
-                throw new CloudException("No such region: " + regionId);
+                throw new GeneralCloudException("No such region: " + regionId);
             }
-            Map<String,String> parameters = getProvider().getStandardParameters(getProvider().getContext(), DESCRIBE_AVAILABILITY_ZONES);
+            Map<String,String> parameters = getProvider().getStandardParameters(DESCRIBE_AVAILABILITY_ZONES);
             EC2Method method = new EC2Method("ec2", regionId, getProvider(), parameters);
-            //EC2Method method = new EC2Method(getProvider(), parameters);
             NodeList blocks;
             Document doc;
 
-            dataCenters = new ArrayList<DataCenter>();
+            dataCenters = new ArrayList<>();
             try {
                 doc = method.invoke();
             }
             catch( EC2Exception e ) {
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             blocks = doc.getElementsByTagName("availabilityZoneInfo");
             for( int i=0; i<blocks.getLength(); i++ ) {
@@ -268,7 +264,7 @@ public class RegionsAndZones extends AbstractDataCenterServices<AWSCloud> {
                 }
             }
             if( cache != null ) {
-                cache.put(ctx, dataCenters);
+                cache.put(getContext(), dataCenters);
             }
             return dataCenters;
         }
@@ -281,13 +277,8 @@ public class RegionsAndZones extends AbstractDataCenterServices<AWSCloud> {
 	public Collection<Region> listRegions() throws InternalException, CloudException {
         APITrace.begin(getProvider(), "DC.listRegions");
         try {
-            ProviderContext ctx = getProvider().getContext();
-
-            if( ctx == null ) {
-                throw new CloudException("No context was set for this request");
-            }
             Cache<Region> cache = Cache.getInstance(getProvider(), "regions", Region.class, CacheLevel.CLOUD_ACCOUNT);
-            Collection<Region> regions = (Collection<Region>)cache.get(ctx);
+            Collection<Region> regions = (Collection<Region>)cache.get(getContext());
 
             if( regions != null ) {
                 return regions;
@@ -295,9 +286,9 @@ public class RegionsAndZones extends AbstractDataCenterServices<AWSCloud> {
             if( getProvider().getEC2Provider().isStorage() ) {
                 return Collections.singletonList(getRegion());
             }
-            regions = new ArrayList<Region>();
+            regions = new ArrayList<>();
 
-            Map<String,String> parameters = getProvider().getStandardParameters(getProvider().getContext(), DESCRIBE_REGIONS);
+            Map<String,String> parameters = getProvider().getStandardParameters(DESCRIBE_REGIONS);
             EC2Method method = new EC2Method(getProvider(), parameters);
             NodeList blocks, nodes;
             Document doc;
@@ -306,9 +297,8 @@ public class RegionsAndZones extends AbstractDataCenterServices<AWSCloud> {
                 doc = method.invoke();
             }
             catch( EC2Exception e ) {
-                e.printStackTrace();
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             blocks = doc.getElementsByTagName("regionInfo");
             for( int i=0; i<blocks.getLength(); i++ ) {
@@ -318,10 +308,6 @@ public class RegionsAndZones extends AbstractDataCenterServices<AWSCloud> {
 
                     if( region.getNodeName().equals("item") ) {
                         Region r = toRegion(nodes.item(j));
-//                        if( r.getName().startsWith("eu-central") ) {
-//                            // FIXME(stas): ignore new central european regions until we transitioned to v4 signatures
-//                            continue;
-//                        }
                         if( getProvider().getEC2Provider().isEucalyptus() ) {
                             if( r.getProviderRegionId().equalsIgnoreCase("eucalyptus") ) {
                                 regions.add(r);
@@ -333,7 +319,7 @@ public class RegionsAndZones extends AbstractDataCenterServices<AWSCloud> {
                     }
                 }
             }
-            cache.put(ctx, regions);
+            cache.put(getContext(), regions);
             return regions;
         }
         finally {
@@ -344,8 +330,8 @@ public class RegionsAndZones extends AbstractDataCenterServices<AWSCloud> {
 	Map<String,String> mapRegions(String url) throws InternalException, CloudException {
         APITrace.begin(getProvider(), "DC.mapRegions");
         try {
-            Map<String,String> parameters = getProvider().getStandardParameters(getProvider().getContext(), DESCRIBE_REGIONS);
-            Map<String,String> results = new HashMap<String,String>();
+            Map<String,String> parameters = getProvider().getStandardParameters(DESCRIBE_REGIONS);
+            Map<String,String> results = new HashMap<>();
             EC2Method method = new EC2Method(getProvider(), parameters);
             NodeList blocks, regions;
             Document doc;
@@ -355,7 +341,7 @@ public class RegionsAndZones extends AbstractDataCenterServices<AWSCloud> {
             }
             catch( EC2Exception e ) {
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             blocks = doc.getElementsByTagName("regionInfo");
             for( int i=0; i<blocks.getLength(); i++ ) {
@@ -392,19 +378,17 @@ public class RegionsAndZones extends AbstractDataCenterServices<AWSCloud> {
 	}
 
     public String isRegionEC2VPC(String regionId) throws CloudException, InternalException{
-        ProviderContext ctx = getProvider().getContext();
-
         Cache<HashMap> cache = Cache.getInstance(getProvider(), "ec2-types", HashMap.class, CacheLevel.CLOUD_ACCOUNT);
-        Collection<HashMap> region2Ec2Types = (Collection<HashMap>)cache.get(ctx);
+        Collection<HashMap> region2Ec2Types = (Collection<HashMap>)cache.get(getContext());
         HashMap<String, String> platformMap = null;
 
         if(region2Ec2Types == null){
-            region2Ec2Types = new ArrayList<HashMap>();
+            region2Ec2Types = new ArrayList<>();
             Collection<Region> regions = listRegions();
-            platformMap = new HashMap<String, String>();
+            platformMap = new HashMap<>();
 
             for(Region r : regions){
-                Map<String,String> parameters = getProvider().getStandardParameters(getProvider().getContext(), EC2Method.DESCRIBE_ACCOUNT_ATTRIBUTES);
+                Map<String,String> parameters = getProvider().getStandardParameters(EC2Method.DESCRIBE_ACCOUNT_ATTRIBUTES);
                 parameters.put("AttributeName.1", "supported-platforms");
                 EC2Method method = new EC2Method(EC2Method.SERVICE_ID, r.getProviderRegionId(), getProvider(), parameters);
                 try{
@@ -436,11 +420,11 @@ public class RegionsAndZones extends AbstractDataCenterServices<AWSCloud> {
                 }
                 catch( EC2Exception e ) {
                     logger.error(e.getSummary());
-                    throw new CloudException(e);
+                    throw new GeneralCloudException(e);
                 }
             }
             region2Ec2Types.add(platformMap);
-            cache.put(ctx, region2Ec2Types);
+            cache.put(getContext(), region2Ec2Types);
         }
         else{
             platformMap = region2Ec2Types.iterator().next();
@@ -486,7 +470,7 @@ public class RegionsAndZones extends AbstractDataCenterServices<AWSCloud> {
 			}
 		}
 		if( dc.getName() == null ) {
-			throw new CloudException("Availability zone info is incomplete for " + dc.getProviderDataCenterId() + ".");
+			throw new GeneralCloudException("Availability zone info is incomplete for " + dc.getProviderDataCenterId() + ".");
 		}
 		return dc;
 	}
@@ -507,7 +491,7 @@ public class RegionsAndZones extends AbstractDataCenterServices<AWSCloud> {
 			}
 		}
 		if( name == null || endpoint == null ) {
-			throw new CloudException("Invalid region data.");
+			throw new GeneralCloudException("Invalid region data.");
 		}
 		Region r = new Region();
 		r.setActive(true);

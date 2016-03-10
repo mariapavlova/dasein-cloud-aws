@@ -21,6 +21,7 @@ package org.dasein.cloud.aws.platform;
 
 import org.apache.log4j.Logger;
 import org.dasein.cloud.CloudException;
+import org.dasein.cloud.GeneralCloudException;
 import org.dasein.cloud.InternalException;
 import org.dasein.cloud.ProviderContext;
 import org.dasein.cloud.aws.AWSCloud;
@@ -46,30 +47,23 @@ import java.util.*;
  * @author Cameron Stokes (http://github.com/clstokes)
  * @since 2013-02-18
  */
-public class CloudWatch extends AbstractMonitoringSupport {
+public class CloudWatch extends AbstractMonitoringSupport<AWSCloud> {
 
     public static final String SERVICE_ID = "monitoring";
     public static final String STATE_OK = "OK";
     public static final String STATE_ALARM = "ALARM";
     public static final String STATE_INSUFFICIENT_DATA = "INSUFFICIENT_DATA";
     static private final Logger logger = Logger.getLogger(CloudWatch.class);
-    private AWSCloud provider = null;
 
     CloudWatch( AWSCloud provider ) {
         super(provider);
-        this.provider = provider;
     }
 
     @Override
     public void updateAlarm( @Nonnull AlarmUpdateOptions options ) throws InternalException, CloudException {
-        APITrace.begin(provider, "CloudWatch.addAlarm");
+        APITrace.begin(getProvider(), "CloudWatch.addAlarm");
         try {
-            ProviderContext ctx = provider.getContext();
-            if( ctx == null ) {
-                throw new CloudException("No context was set for this request");
-            }
-
-            Map<String, String> parameters = provider.getStandardCloudWatchParameters(ctx, EC2Method.PUT_METRIC_ALARM);
+            Map<String, String> parameters = getProvider().getStandardCloudWatchParameters(EC2Method.PUT_METRIC_ALARM);
 
             // all required parameters per CloudWatch API Version 2010-08-01
             parameters.put("AlarmName", options.getAlarmName());
@@ -90,12 +84,12 @@ public class CloudWatch extends AbstractMonitoringSupport {
             AWSCloud.addIndexedParameters(parameters, "Dimensions.member.", options.getMetadata());
 
             EC2Method method;
-            method = new EC2Method(SERVICE_ID, provider, parameters);
+            method = new EC2Method(SERVICE_ID, getProvider(), parameters);
             try {
                 method.invoke();
             } catch( EC2Exception e ) {
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
         } finally {
             APITrace.end();
@@ -103,7 +97,7 @@ public class CloudWatch extends AbstractMonitoringSupport {
     }
 
     @Override public void removeAlarms( @Nonnull String[] alarmNames ) throws InternalException, CloudException {
-        APITrace.begin(provider, "CloudWatch.removeAlarms");
+        APITrace.begin(getProvider(), "CloudWatch.removeAlarms");
         try {
             updateAlarmAction(alarmNames, EC2Method.DELETE_ALARMS);
         } finally {
@@ -113,7 +107,7 @@ public class CloudWatch extends AbstractMonitoringSupport {
 
     @Override
     public void enableAlarmActions( @Nonnull String[] alarmNames ) throws InternalException, CloudException {
-        APITrace.begin(provider, "CloudWatch.enableAlarmActions");
+        APITrace.begin(getProvider(), "CloudWatch.enableAlarmActions");
         try {
             updateAlarmAction(alarmNames, EC2Method.ENABLE_ALARM_ACTIONS);
         } finally {
@@ -123,7 +117,7 @@ public class CloudWatch extends AbstractMonitoringSupport {
 
     @Override
     public void disableAlarmActions( @Nonnull String[] alarmNames ) throws InternalException, CloudException {
-        APITrace.begin(provider, "CloudWatch.disableAlarmActions");
+        APITrace.begin(getProvider(), "CloudWatch.disableAlarmActions");
         try {
             updateAlarmAction(alarmNames, EC2Method.DISABLE_ALARM_ACTIONS);
         } finally {
@@ -132,49 +126,38 @@ public class CloudWatch extends AbstractMonitoringSupport {
     }
 
     private void updateAlarmAction( @Nonnull String[] alarmNames, @Nonnull String action ) throws InternalException, CloudException {
-        ProviderContext ctx = provider.getContext();
-        if( ctx == null ) {
-            throw new CloudException("No context was set for this request");
-        }
+        Map<String, String> parameters = getProvider().getStandardCloudWatchParameters(action);
 
-        Map<String, String> parameters = provider.getStandardCloudWatchParameters(ctx, action);
+        getProvider().addIndexedParameters(parameters, "AlarmNames.member.", alarmNames);
 
-        provider.addIndexedParameters(parameters, "AlarmNames.member.", alarmNames);
-
-        EC2Method method;
-        method = new EC2Method(SERVICE_ID, provider, parameters);
+        EC2Method method = new EC2Method(SERVICE_ID, getProvider(), parameters);
         try {
             method.invoke();
         } catch( EC2Exception e ) {
             logger.error(e.getSummary());
-            throw new CloudException(e);
+            throw new GeneralCloudException(e);
         }
     }
 
     @Override
     public @Nonnull Collection<Alarm> listAlarms( AlarmFilterOptions options ) throws InternalException, CloudException {
-        APITrace.begin(provider, "CloudWatch.listAlarms");
+        APITrace.begin(getProvider(), "CloudWatch.listAlarms");
         try {
-            ProviderContext ctx = provider.getContext();
-            if( ctx == null ) {
-                throw new CloudException("No context was set for this request");
-            }
-
-            Map<String, String> parameters = provider.getStandardCloudWatchParameters(ctx, EC2Method.DESCRIBE_ALARMS);
+            Map<String, String> parameters = getProvider().getStandardCloudWatchParameters(EC2Method.DESCRIBE_ALARMS);
 
             AWSCloud.addExtraParameters(parameters, getAlarmFilterParameters(options));
 
-            List<Alarm> list = new ArrayList<Alarm>();
+            List<Alarm> list = new ArrayList<>();
             NodeList blocks;
             EC2Method method;
             Document doc;
 
-            method = new EC2Method(SERVICE_ID, provider, parameters);
+            method = new EC2Method(SERVICE_ID, getProvider(), parameters);
             try {
                 doc = method.invoke();
             } catch( EC2Exception e ) {
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
 
             blocks = doc.getElementsByTagName("MetricAlarms");
@@ -213,16 +196,16 @@ public class CloudWatch extends AbstractMonitoringSupport {
             String name = attribute.getNodeName();
 
             if( name.equals("AlarmName") ) {
-                alarm.setName(provider.getTextValue(attribute));
+                alarm.setName(getProvider().getTextValue(attribute));
             }
             else if( name.equals("AlarmDescription") ) {
-                alarm.setDescription(provider.getTextValue(attribute));
+                alarm.setDescription(getProvider().getTextValue(attribute));
             }
             else if( name.equals("Namespace") ) {
-                alarm.setMetricNamespace(provider.getTextValue(attribute));
+                alarm.setMetricNamespace(getProvider().getTextValue(attribute));
             }
             else if( name.equals("MetricName") ) {
-                alarm.setMetric(provider.getTextValue(attribute));
+                alarm.setMetric(getProvider().getTextValue(attribute));
             }
             else if( name.equals("Dimensions") ) {
                 Map<String, String> dimensions = toMetadata(attribute.getChildNodes());
@@ -231,10 +214,10 @@ public class CloudWatch extends AbstractMonitoringSupport {
                 }
             }
             else if( name.equals("ActionsEnabled") ) {
-                alarm.setEnabled("true".equals(provider.getTextValue(attribute)));
+                alarm.setEnabled("true".equals(getProvider().getTextValue(attribute)));
             }
             else if( name.equals("AlarmArn") ) {
-                alarm.setProviderAlarmId(provider.getTextValue(attribute));
+                alarm.setProviderAlarmId(getProvider().getTextValue(attribute));
             }
             else if( name.equals("AlarmActions") ) {
                 alarm.setProviderAlarmActionIds(getMembersValues(attribute));
@@ -246,31 +229,31 @@ public class CloudWatch extends AbstractMonitoringSupport {
                 alarm.setProviderOKActionIds(getMembersValues(attribute));
             }
             else if( name.equals("Statistic") ) {
-                alarm.setStatistic(provider.getTextValue(attribute));
+                alarm.setStatistic(getProvider().getTextValue(attribute));
             }
             else if( name.equals("Period") ) {
-                alarm.setPeriod(provider.getIntValue(attribute));
+                alarm.setPeriod(getProvider().getIntValue(attribute));
             }
             else if( name.equals("EvaluationPeriods") ) {
-                alarm.setEvaluationPeriods(provider.getIntValue(attribute));
+                alarm.setEvaluationPeriods(getProvider().getIntValue(attribute));
             }
             else if( name.equals("ComparisonOperator") ) {
-                alarm.setComparisonOperator(provider.getTextValue(attribute));
+                alarm.setComparisonOperator(getProvider().getTextValue(attribute));
             }
             else if( name.equals("Threshold") ) {
-                alarm.setThreshold(provider.getDoubleValue(attribute));
+                alarm.setThreshold(getProvider().getDoubleValue(attribute));
             }
             else if( name.equals("StateReason") ) {
-                alarm.setStateReason(provider.getTextValue(attribute));
+                alarm.setStateReason(getProvider().getTextValue(attribute));
             }
             else if( name.equals("StateReasonData") ) {
-                alarm.setStateReasonData(provider.getTextValue(attribute));
+                alarm.setStateReasonData(getProvider().getTextValue(attribute));
             }
             else if( name.equals("StateUpdatedTimestamp") ) {
-                alarm.setStateUpdatedTimestamp(provider.getTimestampValue(attribute));
+                alarm.setStateUpdatedTimestamp(getProvider().getTimestampValue(attribute));
             }
             else if( name.equals("StateValue") ) {
-                String stateValue = provider.getTextValue(attribute);
+                String stateValue = getProvider().getTextValue(attribute);
                 if( STATE_OK.equals(stateValue) ) {
                     alarm.setStateValue(AlarmState.OK);
                 }
@@ -292,12 +275,12 @@ public class CloudWatch extends AbstractMonitoringSupport {
      * @return array of member string values
      */
     private String[] getMembersValues( Node attribute ) {
-        List<String> actions = new ArrayList<String>();
+        List<String> actions = new ArrayList<>();
         NodeList actionNodes = attribute.getChildNodes();
         for( int j = 0; j < actionNodes.getLength(); j++ ) {
             Node actionNode = actionNodes.item(j);
             if( actionNode.getNodeName().equals("member") ) {
-                actions.add(provider.getTextValue(actionNode));
+                actions.add(getProvider().getTextValue(actionNode));
             }
         }
         if( actions.size() == 0 ) {
@@ -308,15 +291,13 @@ public class CloudWatch extends AbstractMonitoringSupport {
 
     @Override
     public @Nonnull Collection<Metric> listMetrics( final MetricFilterOptions options ) throws InternalException, CloudException {
-        PopulatorThread<Metric> populator;
-
-        provider.hold();
-        populator = new PopulatorThread<Metric>(new JiteratorPopulator<Metric>() {
+        getProvider().hold();
+        PopulatorThread<Metric> populator = new PopulatorThread<>(new JiteratorPopulator<Metric>() {
             public void populate( @Nonnull Jiterator<Metric> iterator ) throws CloudException, InternalException {
                 try {
                     populateMetrics(iterator, null, options);
                 } finally {
-                    provider.release();
+                    getProvider().release();
                 }
             }
         });
@@ -325,14 +306,9 @@ public class CloudWatch extends AbstractMonitoringSupport {
     }
 
     private void populateMetrics( @Nonnull Jiterator<Metric> iterator, @Nullable String nextToken, MetricFilterOptions options ) throws CloudException, InternalException {
-        APITrace.begin(provider, "CloudWatch.listMetrics");
+        APITrace.begin(getProvider(), "CloudWatch.listMetrics");
         try {
-            ProviderContext ctx = provider.getContext();
-            if( ctx == null ) {
-                throw new CloudException("No context was set for this request");
-            }
-
-            Map<String, String> parameters = provider.getStandardCloudWatchParameters(ctx, EC2Method.LIST_METRICS);
+            Map<String, String> parameters = getProvider().getStandardCloudWatchParameters(EC2Method.LIST_METRICS);
 
             AWSCloud.addExtraParameters(parameters, getMetricFilterParameters(options));
             AWSCloud.addValueIfNotNull(parameters, "NextToken", nextToken);
@@ -341,12 +317,12 @@ public class CloudWatch extends AbstractMonitoringSupport {
             EC2Method method;
             Document doc;
 
-            method = new EC2Method(SERVICE_ID, provider, parameters);
+            method = new EC2Method(SERVICE_ID, getProvider(), parameters);
             try {
                 doc = method.invoke();
             } catch( EC2Exception e ) {
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
 
             blocks = doc.getElementsByTagName("Metrics");
@@ -367,7 +343,7 @@ public class CloudWatch extends AbstractMonitoringSupport {
 
             blocks = doc.getElementsByTagName("NextToken");
             if( blocks != null && blocks.getLength() == 1 && blocks.item(0).hasChildNodes() ) {
-                String newNextToken = provider.getTextValue(blocks.item(0));
+                String newNextToken = getProvider().getTextValue(blocks.item(0));
                 populateMetrics(iterator, newNextToken, options);
             }
 
@@ -395,10 +371,10 @@ public class CloudWatch extends AbstractMonitoringSupport {
             String name = attribute.getNodeName();
 
             if( name.equals("MetricName") ) {
-                metric.setName(provider.getTextValue(attribute));
+                metric.setName(getProvider().getTextValue(attribute));
             }
             else if( name.equals("Namespace") ) {
-                metric.setNamespace(provider.getTextValue(attribute));
+                metric.setNamespace(getProvider().getTextValue(attribute));
             }
             else if( name.equals("Dimensions") ) {
                 Map<String, String> dimensions = toMetadata(attribute.getChildNodes());
@@ -417,7 +393,7 @@ public class CloudWatch extends AbstractMonitoringSupport {
      * @return metadata map
      */
     private Map<String, String> toMetadata( NodeList blocks ) {
-        Map<String, String> dimensions = new HashMap<String, String>();
+        Map<String, String> dimensions = new HashMap<>();
 
         for( int i = 0; i < blocks.getLength(); i++ ) {
             Node dimensionNode = blocks.item(i);
@@ -432,10 +408,10 @@ public class CloudWatch extends AbstractMonitoringSupport {
                     String name = attribute.getNodeName();
 
                     if( name.equals("Name") ) {
-                        dimensionName = provider.getTextValue(attribute);
+                        dimensionName = getProvider().getTextValue(attribute);
                     }
                     else if( name.equals("Value") ) {
-                        dimensionValue = provider.getTextValue(attribute);
+                        dimensionValue = getProvider().getTextValue(attribute);
                     }
                 }
                 if( dimensionName != null ) {
@@ -461,7 +437,7 @@ public class CloudWatch extends AbstractMonitoringSupport {
             return null;
         }
 
-        Map<String, String> parameters = new HashMap<String, String>();
+        Map<String, String> parameters = new HashMap<>();
 
         AWSCloud.addValueIfNotNull(parameters, "MetricName", options.getMetricName());
         AWSCloud.addValueIfNotNull(parameters, "Namespace", options.getMetricNamespace());
@@ -485,7 +461,7 @@ public class CloudWatch extends AbstractMonitoringSupport {
             return null;
         }
 
-        Map<String, String> parameters = new HashMap<String, String>();
+        Map<String, String> parameters = new HashMap<>();
 
         if( options.getStateValue() != null ) {
             AWSCloud.addValueIfNotNull(parameters, "StateValue", options.getStateValue().name());
@@ -510,7 +486,7 @@ public class CloudWatch extends AbstractMonitoringSupport {
      * @return the cloudwatch endpoint url
      */
     private String getCloudWatchUrl() {
-        return ( "https://monitoring." + provider.getContext().getRegionId() + ".amazonaws.com" );
+        return ( "https://monitoring." + getProvider().getContext().getRegionId() + ".amazonaws.com" );
     }
 
     @Override

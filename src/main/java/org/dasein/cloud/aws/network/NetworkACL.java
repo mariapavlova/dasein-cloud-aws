@@ -21,6 +21,7 @@ package org.dasein.cloud.aws.network;
 
 import org.apache.log4j.Logger;
 import org.dasein.cloud.CloudException;
+import org.dasein.cloud.GeneralCloudException;
 import org.dasein.cloud.InternalException;
 import org.dasein.cloud.Tag;
 import org.dasein.cloud.aws.AWSCloud;
@@ -65,9 +66,9 @@ public class NetworkACL extends AbstractNetworkFirewallSupport<AWSCloud> {
             String currentAssociation = getCurrentAssociation(withSubnetId);
 
             if( currentAssociation == null ) {
-                throw new CloudException("Unable to identify subnet association for " + withSubnetId);
+                throw new GeneralCloudException("Unable to identify subnet association for " + withSubnetId);
             }
-            Map<String,String> parameters = getProvider().getStandardParameters(getContext(), EC2Method.REPLACE_NETWORK_ACL_ASSOC);
+            Map<String,String> parameters = getProvider().getStandardParameters(EC2Method.REPLACE_NETWORK_ACL_ASSOC);
             EC2Method method;
             NodeList blocks;
             Document doc;
@@ -80,7 +81,7 @@ public class NetworkACL extends AbstractNetworkFirewallSupport<AWSCloud> {
             }
             catch( EC2Exception e ) {
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             String id = null;
 
@@ -89,7 +90,7 @@ public class NetworkACL extends AbstractNetworkFirewallSupport<AWSCloud> {
                 id = blocks.item(0).getFirstChild().getNodeValue().trim();
             }
             if( id == null ) {
-                throw new CloudException("Association failed without explanation");
+                throw new GeneralCloudException("Association failed without explanation");
             }
         }
         finally {
@@ -110,7 +111,7 @@ public class NetworkACL extends AbstractNetworkFirewallSupport<AWSCloud> {
                 }
             }
 
-            Map<String,String> parameters = getProvider().getStandardParameters(getContext(), currentRule == null ? EC2Method.CREATE_NETWORK_ACL_ENTRY : EC2Method.REPLACE_NETWORK_ACL_ENTRY);
+            Map<String,String> parameters = getProvider().getStandardParameters(currentRule == null ? EC2Method.CREATE_NETWORK_ACL_ENTRY : EC2Method.REPLACE_NETWORK_ACL_ENTRY);
             EC2Method method;
             NodeList blocks;
             Document doc;
@@ -129,7 +130,7 @@ public class NetworkACL extends AbstractNetworkFirewallSupport<AWSCloud> {
                 cidr = destinationEndpoint.getCidr();
             }
             if( cidr == null ) {
-                throw new CloudException("No CIDR was specified for " + (direction.equals(Direction.INGRESS) ? "the source endpoint" : "the destination endpoint"));
+                throw new GeneralCloudException("No CIDR was specified for " + (direction.equals(Direction.INGRESS) ? "the source endpoint" : "the destination endpoint"));
             }
             parameters.put("CidrBlock", cidr);
             if( !protocol.equals(Protocol.ICMP) ) {
@@ -146,12 +147,12 @@ public class NetworkACL extends AbstractNetworkFirewallSupport<AWSCloud> {
             }
             catch( EC2Exception e ) {
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             blocks = doc.getElementsByTagName("return");
             if( blocks.getLength() > 0 ) {
                 if( !blocks.item(0).getFirstChild().getNodeValue().equalsIgnoreCase("true") ) {
-                    throw new CloudException("Failed to delete security group without explanation.");
+                    throw new GeneralCloudException("Failed to delete security group without explanation.");
                 }
             }
             return (firewallId + ":" + direction.name() + ":" + String.valueOf(precedence));
@@ -165,7 +166,7 @@ public class NetworkACL extends AbstractNetworkFirewallSupport<AWSCloud> {
     public @Nonnull String createFirewall(@Nonnull FirewallCreateOptions options) throws InternalException, CloudException {
         APITrace.begin(getProvider(), "NetworkFirewall.createFirewall");
         try {
-            Map<String,String> parameters = getProvider().getStandardParameters(getContext(), EC2Method.CREATE_NETWORK_ACL);
+            Map<String,String> parameters = getProvider().getStandardParameters(EC2Method.CREATE_NETWORK_ACL);
             EC2Method method;
             NodeList blocks;
             Document doc;
@@ -176,7 +177,7 @@ public class NetworkACL extends AbstractNetworkFirewallSupport<AWSCloud> {
                 parameters.put("VpcId", vlanId);
             }
             else {
-                throw new CloudException("You must specify a VLAN with which to associate your network ACL");
+                throw new GeneralCloudException("You must specify a VLAN with which to associate your network ACL");
             }
             method = new EC2Method(getProvider(), parameters);
             try {
@@ -184,7 +185,7 @@ public class NetworkACL extends AbstractNetworkFirewallSupport<AWSCloud> {
             }
             catch( EC2Exception e ) {
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             String firewallId;
 
@@ -210,7 +211,7 @@ public class NetworkACL extends AbstractNetworkFirewallSupport<AWSCloud> {
                 firewallId = id;
             }
             else {
-                throw new CloudException("Failed to create network ACL without explanation.");
+                throw new GeneralCloudException("Failed to create network ACL without explanation.");
             }
             FirewallRuleCreateOptions[] ruleOptions = options.getInitialRules();
 
@@ -243,7 +244,7 @@ public class NetworkACL extends AbstractNetworkFirewallSupport<AWSCloud> {
     private @Nullable String getCurrentAssociation(@Nonnull String subnetId) throws InternalException, CloudException {
         APITrace.begin(getProvider(), "NetworkFirewall.getCurrentACLAssociation");
         try {
-            Map<String,String> parameters = getProvider().getStandardParameters(getContext(), EC2Method.DESCRIBE_NETWORK_ACLS);
+            Map<String,String> parameters = getProvider().getStandardParameters(EC2Method.DESCRIBE_NETWORK_ACLS);
             EC2Method method;
             NodeList blocks;
             Document doc;
@@ -256,7 +257,7 @@ public class NetworkACL extends AbstractNetworkFirewallSupport<AWSCloud> {
             }
             catch( EC2Exception e ) {
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             blocks = doc.getElementsByTagName("associationSet");
             for( int i=0; i<blocks.getLength(); i++ ) {
@@ -299,7 +300,7 @@ public class NetworkACL extends AbstractNetworkFirewallSupport<AWSCloud> {
     public @Nullable Firewall getFirewall(@Nonnull String firewallId) throws InternalException, CloudException {
         APITrace.begin(getProvider(), "NetworkFirewall.getFirewall");
         try {
-            Map<String,String> parameters = getProvider().getStandardParameters(getContext(), EC2Method.DESCRIBE_NETWORK_ACLS);
+            Map<String,String> parameters = getProvider().getStandardParameters(EC2Method.DESCRIBE_NETWORK_ACLS);
             EC2Method method;
             NodeList blocks;
             Document doc;
@@ -313,7 +314,7 @@ public class NetworkACL extends AbstractNetworkFirewallSupport<AWSCloud> {
                 if( "InvalidNetworkAclID.NotFound".equalsIgnoreCase(e.getCode()) ) {
                     return null;
                 }
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             blocks = doc.getElementsByTagName("networkAclSet");
             for( int i=0; i<blocks.getLength(); i++ ) {
@@ -370,7 +371,7 @@ public class NetworkACL extends AbstractNetworkFirewallSupport<AWSCloud> {
     public @Nonnull Collection<Firewall> listFirewalls() throws InternalException, CloudException {
         APITrace.begin(getProvider(), "NetworkFirewall.listFirewalls");
         try {
-            Map<String,String> parameters = getProvider().getStandardParameters(getContext(), EC2Method.DESCRIBE_NETWORK_ACLS);
+            Map<String,String> parameters = getProvider().getStandardParameters(EC2Method.DESCRIBE_NETWORK_ACLS);
             ArrayList<Firewall> list = new ArrayList<Firewall>();
             EC2Method method;
             NodeList blocks;
@@ -382,7 +383,7 @@ public class NetworkACL extends AbstractNetworkFirewallSupport<AWSCloud> {
             }
             catch( EC2Exception e ) {
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             blocks = doc.getElementsByTagName("networkAclSet");
             for( int i=0; i<blocks.getLength(); i++ ) {
@@ -411,7 +412,7 @@ public class NetworkACL extends AbstractNetworkFirewallSupport<AWSCloud> {
     public @Nonnull Iterable<FirewallRule> listRules(@Nonnull String firewallId) throws InternalException, CloudException {
         APITrace.begin(getProvider(), "NetworkFirewall.listRules");
         try {
-            Map<String,String> parameters = getProvider().getStandardParameters(getContext(), EC2Method.DESCRIBE_NETWORK_ACLS);
+            Map<String,String> parameters = getProvider().getStandardParameters(EC2Method.DESCRIBE_NETWORK_ACLS);
             EC2Method method;
             NodeList blocks;
             Document doc;
@@ -423,7 +424,7 @@ public class NetworkACL extends AbstractNetworkFirewallSupport<AWSCloud> {
             }
             catch( EC2Exception e ) {
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             ArrayList<FirewallRule> rules = new ArrayList<FirewallRule>();
 
@@ -542,7 +543,7 @@ public class NetworkACL extends AbstractNetworkFirewallSupport<AWSCloud> {
                         }
                     }
 
-                    Map<String,String> parameters = getProvider().getStandardParameters(getContext(), EC2Method.DELETE_NETWORK_ACL);
+                    Map<String,String> parameters = getProvider().getStandardParameters(EC2Method.DELETE_NETWORK_ACL);
                     EC2Method method;
                     NodeList blocks;
                     Document doc;
@@ -554,12 +555,12 @@ public class NetworkACL extends AbstractNetworkFirewallSupport<AWSCloud> {
                     }
                     catch( EC2Exception e ) {
                         logger.error(e.getSummary());
-                        throw new CloudException(e);
+                        throw new GeneralCloudException(e);
                     }
                     blocks = doc.getElementsByTagName("return");
                     if( blocks.getLength() > 0 ) {
                         if( !blocks.item(0).getFirstChild().getNodeValue().equalsIgnoreCase("true") ) {
-                            throw new CloudException("Failed to delete security group without explanation.");
+                            throw new GeneralCloudException("Failed to delete security group without explanation.");
                         }
                     }
                 }
@@ -590,14 +591,14 @@ public class NetworkACL extends AbstractNetworkFirewallSupport<AWSCloud> {
     public void revoke(@Nonnull String providerFirewallRuleId) throws InternalException, CloudException {
         APITrace.begin(getProvider(), "NetworkFirewall.revoke");
         try {
-            Map<String,String> parameters = getProvider().getStandardParameters(getContext(), EC2Method.DELETE_NETWORK_ACL_ENTRY);
+            Map<String,String> parameters = getProvider().getStandardParameters(EC2Method.DELETE_NETWORK_ACL_ENTRY);
             EC2Method method;
             NodeList blocks;
             Document doc;
 
             String[] parts = providerFirewallRuleId.split(":");
             if( parts.length != 3 ) {
-                throw new CloudException("Invalid network ACL entry: " + providerFirewallRuleId);
+                throw new GeneralCloudException("Invalid network ACL entry: " + providerFirewallRuleId);
             }
             parameters.put("NetworkAclId", parts[0]);
             parameters.put("Egress", String.valueOf(parts[1].equalsIgnoreCase(Direction.EGRESS.name())));
@@ -608,12 +609,12 @@ public class NetworkACL extends AbstractNetworkFirewallSupport<AWSCloud> {
             }
             catch( EC2Exception e ) {
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             blocks = doc.getElementsByTagName("return");
             if( blocks.getLength() > 0 ) {
                 if( !blocks.item(0).getFirstChild().getNodeValue().equalsIgnoreCase("true") ) {
-                    throw new CloudException("Failed to delete security group without explanation.");
+                    throw new GeneralCloudException("Failed to delete security group without explanation.");
                 }
             }
         }
@@ -650,7 +651,7 @@ public class NetworkACL extends AbstractNetworkFirewallSupport<AWSCloud> {
         String regionId = getContext().getRegionId();
 
         if( regionId == null ) {
-            throw new CloudException("No region was specified for this context");
+            throw new InternalException("No region was specified for this context");
         }
         firewall.setRegionId(regionId);
 

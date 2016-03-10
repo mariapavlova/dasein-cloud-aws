@@ -23,6 +23,7 @@ import java.util.Locale;
 import java.util.Map;
 
 import org.dasein.cloud.CloudException;
+import org.dasein.cloud.GeneralCloudException;
 import org.dasein.cloud.InternalException;
 import org.dasein.cloud.ResourceStatus;
 import org.dasein.cloud.aws.AWSCloud;
@@ -94,7 +95,7 @@ public class SQS extends AbstractMQSupport<AWSCloud> {
     }
 
     private void setQueueAttribute(@Nonnull String endpoint, @Nonnull String name, @Nonnull String value) throws InternalException, CloudException {
-        Map<String,String> parameters = getProvider().getStandardSqsParameters(getContext(), SET_QUEUE_ATTRIBUTES);
+        Map<String,String> parameters = getProvider().getStandardSqsParameters(SET_QUEUE_ATTRIBUTES);
         EC2Method method;
 
         parameters.put("Attribute.Name", name);
@@ -104,7 +105,7 @@ public class SQS extends AbstractMQSupport<AWSCloud> {
             method.invoke();
         }
         catch( EC2Exception e ) {
-            throw new CloudException(e);
+            throw new GeneralCloudException(e);
         }
     }
 }

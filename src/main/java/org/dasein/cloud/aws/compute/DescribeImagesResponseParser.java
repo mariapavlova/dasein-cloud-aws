@@ -20,6 +20,7 @@
 package org.dasein.cloud.aws.compute;
 
 import org.dasein.cloud.CloudException;
+import org.dasein.cloud.GeneralCloudException;
 import org.dasein.cloud.InternalException;
 import org.dasein.cloud.compute.*;
 
@@ -94,7 +95,7 @@ public class DescribeImagesResponseParser implements XmlStreamParser<MachineImag
             }
         }
         catch( XMLStreamException e ) {
-            throw new CloudException(e);
+            throw new GeneralCloudException(e);
         } finally {
             if( reader != null ) {
                 try {

@@ -1,14 +1,14 @@
 /**
  * Copyright (C) 2009-2015 Dell, Inc.
  * See annotations for authorship information
- *
+ * <p/>
  * ====================================================================
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
+ * <p/>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p/>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -24,13 +24,7 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 import org.apache.log4j.Logger;
-import org.dasein.cloud.CloudException;
-import org.dasein.cloud.InternalException;
-import org.dasein.cloud.OperationNotSupportedException;
-import org.dasein.cloud.ProviderContext;
-import org.dasein.cloud.Requirement;
-import org.dasein.cloud.ResourceStatus;
-import org.dasein.cloud.Tag;
+import org.dasein.cloud.*;
 import org.dasein.cloud.aws.AWSCloud;
 import org.dasein.cloud.aws.model.*;
 import org.dasein.cloud.compute.*;
@@ -50,21 +44,21 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 public class EBSVolume extends AbstractVolumeSupport<AWSCloud> {
-	static private final Logger logger = Logger.getLogger(EBSVolume.class);
+    static private final Logger logger = Logger.getLogger(EBSVolume.class);
 
     static private final String VOLUME_PRODUCT_IOPS = "io1";
 
     private EBSVolumeCapabilities capabilities;
 
-    EBSVolume(AWSCloud provider) {
+    EBSVolume( AWSCloud provider ) {
         super(provider);
-	}
+    }
 
-	@Override
-	public void attach(@Nonnull String volumeId, @Nonnull String toServer, @Nullable String device) throws InternalException, CloudException {
+    @Override
+    public void attach( @Nonnull String volumeId, @Nonnull String toServer, @Nullable String device ) throws InternalException, CloudException {
         APITrace.begin(getProvider(), "Volume.attach");
         try {
-            Map<String,String> parameters = getProvider().getStandardParameters(getProvider().getContext(), EC2Method.ATTACH_VOLUME);
+            Map<String, String> parameters = getProvider().getStandardParameters(EC2Method.ATTACH_VOLUME);
             EC2Method method;
 
             parameters.put("VolumeId", volumeId);
@@ -76,27 +70,22 @@ public class EBSVolume extends AbstractVolumeSupport<AWSCloud> {
             }
             catch( EC2Exception e ) {
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
         }
         finally {
             APITrace.end();
         }
-	}
+    }
 
     @Override
-    public @Nonnull String createVolume(@Nonnull VolumeCreateOptions options) throws InternalException, CloudException {
+    public @Nonnull String createVolume( @Nonnull VolumeCreateOptions options ) throws InternalException, CloudException {
         APITrace.begin(getProvider(), "Volume.createVolume");
         try {
-            if( !options.getFormat().equals(VolumeFormat.BLOCK)) {
+            if( !options.getFormat().equals(VolumeFormat.BLOCK) ) {
                 throw new OperationNotSupportedException("NFS volumes are not currently supported");
             }
-            ProviderContext ctx = getProvider().getContext();
-
-            if( ctx == null ) {
-                throw new InternalException("No context was specified for this request");
-            }
-            Map<String,String> parameters = getProvider().getStandardParameters(ctx, EC2Method.CREATE_VOLUME);
+            Map<String, String> parameters = getProvider().getStandardParameters(EC2Method.CREATE_VOLUME);
             EC2Method method;
             NodeList blocks;
             Document doc;
@@ -109,25 +98,25 @@ public class EBSVolume extends AbstractVolumeSupport<AWSCloud> {
             String az = options.getDataCenterId();
 
             if( az == null ) {
-                for( DataCenter dc : getProvider().getDataCenterServices().listDataCenters(ctx.getRegionId()) ) {
+                for( DataCenter dc : getProvider().getDataCenterServices().listDataCenters(getContext().getRegionId()) ) {
                     az = dc.getProviderDataCenterId();
                 }
                 if( az == null ) {
-                    throw new CloudException("Unable to identify a launch data center");
+                    throw new GeneralCloudException("Unable to identify a launch data center");
                 }
             }
             parameters.put("AvailabilityZone", az);
             if( getProvider().getEC2Provider().isAWS() || getProvider().getEC2Provider().isEnStratus() ) {
                 if( options.getVolumeProductId() != null ) {
-                    VolumeProduct prd = getVolumeProduct( options.getVolumeProductId() );
+                    VolumeProduct prd = getVolumeProduct(options.getVolumeProductId());
                     if( prd != null ) {
                         parameters.put("VolumeType", prd.getProviderProductId());
-                        if ( VOLUME_PRODUCT_IOPS.equals( prd.getProviderProductId() ) ) {
-                            if ( prd.getMaxIops() > 0 && options.getIops() > 0 ) {
-                                parameters.put( "Iops", String.valueOf( options.getIops() ) );
+                        if( VOLUME_PRODUCT_IOPS.equals(prd.getProviderProductId()) ) {
+                            if( prd.getMaxIops() > 0 && options.getIops() > 0 ) {
+                                parameters.put("Iops", String.valueOf(options.getIops()));
                             }
-                            else if ( prd.getMinIops() > 0 ) {
-                                parameters.put( "Iops", String.valueOf( prd.getMinIops() ) );
+                            else if( prd.getMinIops() > 0 ) {
+                                parameters.put("Iops", String.valueOf(prd.getMinIops()));
                             }
                         }
                     }
@@ -139,18 +128,18 @@ public class EBSVolume extends AbstractVolumeSupport<AWSCloud> {
             }
             catch( EC2Exception e ) {
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             blocks = doc.getElementsByTagName("volumeId");
             if( blocks.getLength() > 0 ) {
                 String id = blocks.item(0).getFirstChild().getNodeValue().trim();
-                Map<String,Object> meta = options.getMetaData();
+                Map<String, Object> meta = options.getMetaData();
 
                 meta.put("Name", options.getName());
                 meta.put("Description", options.getDescription());
-                ArrayList<Tag> tags = new ArrayList<Tag>();
+                List<Tag> tags = new ArrayList<>();
 
-                for( Map.Entry<String,Object> entry : meta.entrySet() ) {
+                for( Map.Entry<String, Object> entry : meta.entrySet() ) {
                     Object value = entry.getValue();
 
                     if( value != null ) {
@@ -162,7 +151,7 @@ public class EBSVolume extends AbstractVolumeSupport<AWSCloud> {
                 }
                 return id;
             }
-            throw new CloudException("Successful POST, but no volume information was provided");
+            throw new GeneralCloudException("Successful POST, but no volume information was provided");
         }
         finally {
             APITrace.end();
@@ -170,10 +159,10 @@ public class EBSVolume extends AbstractVolumeSupport<AWSCloud> {
     }
 
     @Override
-    public void detach(@Nonnull String volumeId, boolean force) throws InternalException, CloudException {
+    public void detach( @Nonnull String volumeId, boolean force ) throws InternalException, CloudException {
         APITrace.begin(getProvider(), "Volume.detach");
         try {
-            Map<String,String> parameters = getProvider().getStandardParameters(getProvider().getContext(), EC2Method.DETACH_VOLUME);
+            Map<String, String> parameters = getProvider().getStandardParameters(EC2Method.DETACH_VOLUME);
             EC2Method method;
             NodeList blocks;
             Document doc;
@@ -188,12 +177,12 @@ public class EBSVolume extends AbstractVolumeSupport<AWSCloud> {
             }
             catch( EC2Exception e ) {
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             blocks = doc.getElementsByTagName("return");
             if( blocks.getLength() > 0 ) {
                 if( !blocks.item(0).getFirstChild().getNodeValue().equalsIgnoreCase("true") ) {
-                    throw new CloudException("Detach of volume denied.");
+                    throw new GeneralCloudException("Detach of volume denied.");
                 }
             }
         }
@@ -211,38 +200,8 @@ public class EBSVolume extends AbstractVolumeSupport<AWSCloud> {
     }
 
     @Override
-    public int getMaximumVolumeCount() throws InternalException, CloudException {
-        return getCapabilities().getMaximumVolumeCount();
-    }
-
-    @Override
-    public @Nullable Storage<Gigabyte> getMaximumVolumeSize() throws InternalException, CloudException {
-        return getCapabilities().getMaximumVolumeSize();
-    }
-
-    @Override
-    public @Nonnull Storage<Gigabyte> getMinimumVolumeSize() throws InternalException, CloudException {
-        return getCapabilities().getMinimumVolumeSize();
-    }
-
-    @Override
-	public @Nonnull String getProviderTermForVolume(@Nonnull Locale locale) {
-		return getCapabilities().getProviderTermForVolume(locale);
-	}
-
-    @Override
     public boolean isSubscribed() throws CloudException, InternalException {
         return true;
-    }
-    
-    @Override
-    public @Nonnull Iterable<String> listPossibleDeviceIds(@Nonnull Platform platform) throws InternalException, CloudException {
-        return getCapabilities().listPossibleDeviceIds(platform);
-    }
-
-    @Override
-    public @Nonnull Iterable<VolumeFormat> listSupportedFormats() throws InternalException, CloudException {
-        return getCapabilities().listSupportedFormats();
     }
 
     @Override
@@ -251,30 +210,25 @@ public class EBSVolume extends AbstractVolumeSupport<AWSCloud> {
         String regionId = getContext().getRegionId();
         List<org.dasein.cloud.aws.model.VolumeProduct> products = volumeProvider.getProducts();
         List<VolumeProduct> volumeProducts = new ArrayList<VolumeProduct>();
-        for ( org.dasein.cloud.aws.model.VolumeProduct product : products ) {
+        for( org.dasein.cloud.aws.model.VolumeProduct product : products ) {
             VolumePrice price = volumeProvider.findProductPrice(regionId, product.getId());
             if( price == null ) {
                 continue;
             }
-            VolumeProduct volumeProduct = VolumeProduct.getInstance(product.getId(), product.getName(), product.getDescription(), VolumeType.valueOf(product.getType().toUpperCase()), product.getMinIops(), product.getMaxIops(), price.getMonthly(), price.getIops() );
+            VolumeProduct volumeProduct = VolumeProduct.getInstance(product.getId(), product.getName(), product.getDescription(), VolumeType.valueOf(product.getType().toUpperCase()), product.getMinIops(), product.getMaxIops(), price.getMonthly(), price.getIops());
             volumeProduct.withMaxIopsRatio(product.getIopsToGb());
-            volumeProduct.withMaxVolumeSize(new Storage<Gigabyte>(product.getMaxSize(), Storage.GIGABYTE));
-            volumeProduct.withMinVolumeSize(new Storage<Gigabyte>(product.getMinSize(), Storage.GIGABYTE));
+            volumeProduct.withMaxVolumeSize(new Storage<>(product.getMaxSize(), Storage.GIGABYTE));
+            volumeProduct.withMinVolumeSize(new Storage<>(product.getMinSize(), Storage.GIGABYTE));
             volumeProducts.add(volumeProduct);
         }
         return volumeProducts;
     }
 
     @Override
-	public @Nullable Volume getVolume(@Nonnull String volumeId) throws InternalException, CloudException {
+    public @Nullable Volume getVolume( @Nonnull String volumeId ) throws InternalException, CloudException {
         APITrace.begin(getProvider(), "Volume.getVolume");
         try {
-            ProviderContext ctx = getProvider().getContext();
-
-            if( ctx == null ) {
-                throw new CloudException("No context exists for this request.");
-            }
-            Map<String,String> parameters = getProvider().getStandardParameters(getProvider().getContext(), EC2Method.DESCRIBE_VOLUMES);
+            Map<String, String> parameters = getProvider().getStandardParameters(EC2Method.DESCRIBE_VOLUMES);
             EC2Method method;
             NodeList blocks;
             Document doc;
@@ -287,21 +241,21 @@ public class EBSVolume extends AbstractVolumeSupport<AWSCloud> {
             catch( EC2Exception e ) {
                 String code = e.getCode();
 
-                if( code != null && (code.startsWith("InvalidVolume.NotFound") || code.equals("InvalidParameterValue")) ) {
+                if( code != null && ( code.startsWith("InvalidVolume.NotFound") || code.equals("InvalidParameterValue") ) ) {
                     return null;
                 }
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             blocks = doc.getElementsByTagName("volumeSet");
-            for( int i=0; i<blocks.getLength(); i++ ) {
+            for( int i = 0; i < blocks.getLength(); i++ ) {
                 NodeList items = blocks.item(i).getChildNodes();
 
-                for( int j=0; j<items.getLength(); j++ ) {
+                for( int j = 0; j < items.getLength(); j++ ) {
                     Node item = items.item(j);
 
                     if( item.getNodeName().equals("item") ) {
-                        Volume volume = toVolume(ctx, item);
+                        Volume volume = toVolume(item);
 
                         if( volume != null && volume.getProviderVolumeId().equals(volumeId) ) {
                             return volume;
@@ -314,29 +268,14 @@ public class EBSVolume extends AbstractVolumeSupport<AWSCloud> {
         finally {
             APITrace.end();
         }
-	}
-
-    @Override
-    public @Nonnull Requirement getVolumeProductRequirement() throws InternalException, CloudException {
-        return getCapabilities().getVolumeProductRequirement();
-    }
-
-    @Override
-    public boolean isVolumeSizeDeterminedByProduct() throws InternalException, CloudException {
-        return getCapabilities().isVolumeSizeDeterminedByProduct();
     }
 
     @Override
     public @Nonnull Iterable<ResourceStatus> listVolumeStatus() throws InternalException, CloudException {
         APITrace.begin(getProvider(), "Volume.listVolumeStatus");
         try {
-            ProviderContext ctx = getProvider().getContext();
-
-            if( ctx == null ) {
-                throw new CloudException("No context exists for this request.");
-            }
-            Map<String,String> parameters = getProvider().getStandardParameters(getProvider().getContext(), EC2Method.DESCRIBE_VOLUMES);
-            ArrayList<ResourceStatus> list = new ArrayList<ResourceStatus>();
+            Map<String, String> parameters = getProvider().getStandardParameters(EC2Method.DESCRIBE_VOLUMES);
+            List<ResourceStatus> list = new ArrayList<>();
             EC2Method method;
             NodeList blocks;
             Document doc;
@@ -347,13 +286,13 @@ public class EBSVolume extends AbstractVolumeSupport<AWSCloud> {
             }
             catch( EC2Exception e ) {
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             blocks = doc.getElementsByTagName("volumeSet");
-            for( int i=0; i<blocks.getLength(); i++ ) {
+            for( int i = 0; i < blocks.getLength(); i++ ) {
                 NodeList items = blocks.item(i).getChildNodes();
 
-                for( int j=0; j<items.getLength(); j++ ) {
+                for( int j = 0; j < items.getLength(); j++ ) {
                     Node item = items.item(j);
 
                     if( item.getNodeName().equals("item") ) {
@@ -375,47 +314,42 @@ public class EBSVolume extends AbstractVolumeSupport<AWSCloud> {
 
     @Override
     public @Nonnull Iterable<Volume> listVolumes() throws InternalException, CloudException {
-        return listVolumes( null );
+        return listVolumes(null);
     }
 
     @Override
-    public @Nonnull Iterable<Volume> listVolumes(@Nullable VolumeFilterOptions options) throws InternalException, CloudException {
+    public @Nonnull Iterable<Volume> listVolumes( @Nullable VolumeFilterOptions options ) throws InternalException, CloudException {
         APITrace.begin(getProvider(), "Volume.listVolumes");
         try {
-            ProviderContext ctx = getProvider().getContext();
-
-            if( ctx == null ) {
-                throw new CloudException("No context exists for this request.");
-            }
-            Map<String,String> parameters = getProvider().getStandardParameters(getProvider().getContext(), EC2Method.DESCRIBE_VOLUMES);
-            ArrayList<Volume> list = new ArrayList<Volume>();
+            Map<String, String> parameters = getProvider().getStandardParameters(EC2Method.DESCRIBE_VOLUMES);
+            ArrayList<Volume> list = new ArrayList<>();
             EC2Method method;
             NodeList blocks;
             Document doc;
 
-            if ( options != null ) {
-                AWSCloud.addExtraParameters( parameters, getProvider().getTagFilterParams( options.getTags() ) );
+            if( options != null ) {
+                AWSCloud.addExtraParameters(parameters, getProvider().getTagFilterParams(options.getTags()));
             }
 
-            method = new EC2Method( getProvider(), parameters );
+            method = new EC2Method(getProvider(), parameters);
             try {
                 doc = method.invoke();
             }
             catch( EC2Exception e ) {
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             blocks = doc.getElementsByTagName("volumeSet");
-            for( int i=0; i<blocks.getLength(); i++ ) {
+            for( int i = 0; i < blocks.getLength(); i++ ) {
                 NodeList items = blocks.item(i).getChildNodes();
 
-                for( int j=0; j<items.getLength(); j++ ) {
+                for( int j = 0; j < items.getLength(); j++ ) {
                     Node item = items.item(j);
 
                     if( item.getNodeName().equals("item") ) {
-                        Volume volume = toVolume( ctx, item );
+                        Volume volume = toVolume(item);
 
-                        if( volume != null && (options == null || options.matches(volume)) ) {
+                        if( volume != null && ( options == null || options.matches(volume) ) ) {
                             list.add(volume);
                         }
                     }
@@ -429,33 +363,33 @@ public class EBSVolume extends AbstractVolumeSupport<AWSCloud> {
     }
 
     @Override
-    public @Nonnull String[] mapServiceAction(@Nonnull ServiceAction action) {
+    public @Nonnull String[] mapServiceAction( @Nonnull ServiceAction action ) {
         if( action.equals(VolumeSupport.ANY) ) {
-            return new String[] { EC2Method.EC2_PREFIX + "*" };
+            return new String[]{EC2Method.EC2_PREFIX + "*"};
         }
         else if( action.equals(VolumeSupport.ATTACH) ) {
-            return new String[] { EC2Method.EC2_PREFIX + EC2Method.ATTACH_VOLUME };
+            return new String[]{EC2Method.EC2_PREFIX + EC2Method.ATTACH_VOLUME};
         }
         else if( action.equals(VolumeSupport.CREATE_VOLUME) ) {
-            return new String[] { EC2Method.EC2_PREFIX + EC2Method.CREATE_VOLUME };
+            return new String[]{EC2Method.EC2_PREFIX + EC2Method.CREATE_VOLUME};
         }
         else if( action.equals(VolumeSupport.DETACH) ) {
-            return new String[] { EC2Method.EC2_PREFIX + EC2Method.DETACH_VOLUME };
+            return new String[]{EC2Method.EC2_PREFIX + EC2Method.DETACH_VOLUME};
         }
         else if( action.equals(VolumeSupport.GET_VOLUME) || action.equals(VolumeSupport.LIST_VOLUME) ) {
-            return new String[] { EC2Method.EC2_PREFIX + EC2Method.DESCRIBE_VOLUMES };            
+            return new String[]{EC2Method.EC2_PREFIX + EC2Method.DESCRIBE_VOLUMES};
         }
         else if( action.equals(VolumeSupport.REMOVE_VOLUME) ) {
-            return new String[] { EC2Method.EC2_PREFIX + EC2Method.DELETE_VOLUME };
+            return new String[]{EC2Method.EC2_PREFIX + EC2Method.DELETE_VOLUME};
         }
         return new String[0];
     }
 
     @Override
-    public void remove(@Nonnull String volumeId) throws InternalException, CloudException {
+    public void remove( @Nonnull String volumeId ) throws InternalException, CloudException {
         APITrace.begin(getProvider(), "Volume.remove");
         try {
-            Map<String,String> parameters = getProvider().getStandardParameters(getProvider().getContext(), EC2Method.DELETE_VOLUME);
+            Map<String, String> parameters = getProvider().getStandardParameters(EC2Method.DELETE_VOLUME);
             EC2Method method;
             NodeList blocks;
             Document doc;
@@ -467,12 +401,12 @@ public class EBSVolume extends AbstractVolumeSupport<AWSCloud> {
             }
             catch( EC2Exception e ) {
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             blocks = doc.getElementsByTagName("return");
             if( blocks.getLength() > 0 ) {
                 if( !blocks.item(0).getFirstChild().getNodeValue().equalsIgnoreCase("true") ) {
-                    throw new CloudException("Deletion of volume denied.");
+                    throw new GeneralCloudException("Deletion of volume denied.");
                 }
             }
         }
@@ -482,12 +416,12 @@ public class EBSVolume extends AbstractVolumeSupport<AWSCloud> {
     }
 
     @Override
-    public void updateTags(@Nonnull String volumeId, @Nonnull Tag ... tags) throws CloudException, InternalException {
-        updateTags(new String[] { volumeId }, tags);
+    public void updateTags( @Nonnull String volumeId, @Nonnull Tag... tags ) throws CloudException, InternalException {
+        updateTags(new String[]{volumeId}, tags);
     }
 
     @Override
-    public void updateTags(@Nonnull String[] volumeIds, @Nonnull Tag... tags) throws CloudException, InternalException {
+    public void updateTags( @Nonnull String[] volumeIds, @Nonnull Tag... tags ) throws CloudException, InternalException {
         APITrace.begin(getProvider(), "Volume.updateTags");
         try {
             getProvider().createTags(EC2Method.SERVICE_ID, volumeIds, tags);
@@ -498,12 +432,12 @@ public class EBSVolume extends AbstractVolumeSupport<AWSCloud> {
     }
 
     @Override
-    public void removeTags(@Nonnull String volumeId, @Nonnull Tag ... tags) throws CloudException, InternalException {
+    public void removeTags( @Nonnull String volumeId, @Nonnull Tag... tags ) throws CloudException, InternalException {
         removeTags(new String[]{volumeId}, tags);
     }
 
     @Override
-    public void removeTags(@Nonnull String[] volumeIds, @Nonnull Tag... tags) throws CloudException, InternalException {
+    public void removeTags( @Nonnull String[] volumeIds, @Nonnull Tag... tags ) throws CloudException, InternalException {
         APITrace.begin(getProvider(), "Volume.removeTags");
         try {
             getProvider().removeTags(EC2Method.SERVICE_ID, volumeIds, tags);
@@ -513,20 +447,20 @@ public class EBSVolume extends AbstractVolumeSupport<AWSCloud> {
         }
     }
 
-    public VolumeProduct getVolumeProduct(String volumeProductId) throws InternalException, CloudException{
-      VolumeProduct prd = null;
+    public VolumeProduct getVolumeProduct( String volumeProductId ) throws InternalException, CloudException {
+        VolumeProduct prd = null;
 
-      for ( VolumeProduct p : listVolumeProducts() ) {
-        if ( p.getProviderProductId().equals( volumeProductId ) ) {
-          prd = p;
-          break;
+        for( VolumeProduct p : listVolumeProducts() ) {
+            if( p.getProviderProductId().equals(volumeProductId) ) {
+                prd = p;
+                break;
+            }
         }
-      }
 
-      return prd;
+        return prd;
     }
 
-    private @Nullable ResourceStatus toStatus(@Nullable Node node) throws CloudException {
+    private @Nullable ResourceStatus toStatus( @Nullable Node node ) throws CloudException {
         if( node == null ) {
             return null;
         }
@@ -534,7 +468,7 @@ public class EBSVolume extends AbstractVolumeSupport<AWSCloud> {
         VolumeState state = VolumeState.PENDING;
         String volumeId = null;
 
-        for( int i=0; i<attrs.getLength(); i++ ) {
+        for( int i = 0; i < attrs.getLength(); i++ ) {
             Node attr = attrs.item(i);
             String name;
 
@@ -562,7 +496,7 @@ public class EBSVolume extends AbstractVolumeSupport<AWSCloud> {
         return new ResourceStatus(volumeId, state);
     }
 
-	private @Nullable Volume toVolume(@Nonnull ProviderContext ctx, @Nullable Node node) throws CloudException {
+    private @Nullable Volume toVolume( @Nullable Node node ) throws CloudException, InternalException {
         if( node == null ) {
             return null;
         }
@@ -570,16 +504,16 @@ public class EBSVolume extends AbstractVolumeSupport<AWSCloud> {
         Volume volume = new Volume();
 
         volume.setProviderProductId("standard");
-        volume.setType( VolumeType.HDD );
+        volume.setType(VolumeType.HDD);
         volume.setFormat(VolumeFormat.BLOCK);
-		for( int i=0; i<attrs.getLength(); i++ ) {
-			Node attr = attrs.item(i);
-			String name;
-			
-			name = attr.getNodeName();
-			if( name.equals("volumeId") ) {
-				volume.setProviderVolumeId(attr.getFirstChild().getNodeValue().trim());
-			}
+        for( int i = 0; i < attrs.getLength(); i++ ) {
+            Node attr = attrs.item(i);
+            String name;
+
+            name = attr.getNodeName();
+            if( name.equals("volumeId") ) {
+                volume.setProviderVolumeId(attr.getFirstChild().getNodeValue().trim());
+            }
             else if( name.equalsIgnoreCase("name") && attr.hasChildNodes() ) {
                 volume.setName(attr.getFirstChild().getNodeName().trim());
             }
@@ -587,9 +521,9 @@ public class EBSVolume extends AbstractVolumeSupport<AWSCloud> {
                 volume.setDescription(attr.getFirstChild().getNodeName().trim());
             }
             else if( name.equals("size") ) {
-				int size = Integer.parseInt(attr.getFirstChild().getNodeValue().trim());
-				
-                volume.setSize(new Storage<Gigabyte>(size, Storage.GIGABYTE));
+                int size = Integer.parseInt(attr.getFirstChild().getNodeValue().trim());
+
+                volume.setSize(new Storage<>(size, Storage.GIGABYTE));
             }
             else if( name.equals("snapshotId") ) {
                 NodeList values = attr.getChildNodes();
@@ -609,22 +543,21 @@ public class EBSVolume extends AbstractVolumeSupport<AWSCloud> {
             else if( name.equalsIgnoreCase("iops") && attr.hasChildNodes() ) {
                 volume.setIops(Integer.parseInt(attr.getFirstChild().getNodeValue().trim()));
             }
-			else if( name.equals("createTime") ) {
-				SimpleDateFormat fmt = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
-				String value = attr.getFirstChild().getNodeValue().trim();
+            else if( name.equals("createTime") ) {
+                SimpleDateFormat fmt = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+                String value = attr.getFirstChild().getNodeValue().trim();
 
-				try {
-					volume.setCreationTimestamp(fmt.parse(value).getTime());
-				} 
-				catch( ParseException e ) {
-					logger.error(e);
-					e.printStackTrace();
-					throw new CloudException(e);
-				}				
-			}
-			else if( name.equals("status") ) {
-        volume.setCurrentState( toVolumeState( attr ) );
-      }
+                try {
+                    volume.setCreationTimestamp(fmt.parse(value).getTime());
+                }
+                catch( ParseException e ) {
+                    logger.error(e);
+                    throw new GeneralCloudException(e);
+                }
+            }
+            else if( name.equals("status") ) {
+                volume.setCurrentState(toVolumeState(attr));
+            }
             else if( name.equals("tagSet") ) {
                 getProvider().setTags(attr, volume);
 
@@ -639,35 +572,35 @@ public class EBSVolume extends AbstractVolumeSupport<AWSCloud> {
                     volume.setDescription(s);
                 }
             }
-			else if( name.equals("attachmentSet") ) {
-				NodeList attachments = attr.getChildNodes();
-				
-				for( int j=0; j<attachments.getLength(); j++ ) {
-					Node item = attachments.item(j);
-					
-					if( item.getNodeName().equals("item") ) {
-						NodeList infoList = item.getChildNodes();
-						
-						for( int k=0; k<infoList.getLength(); k++ ) {
-							Node info = infoList.item(k);
-							
-							name = info.getNodeName();
-							if( name.equals("instanceId") ) {
-								volume.setProviderVirtualMachineId(info.getFirstChild().getNodeValue().trim());
-							}
-							else if( name.equals("device") ) {
-							    String deviceId = info.getFirstChild().getNodeValue().trim();
+            else if( name.equals("attachmentSet") ) {
+                NodeList attachments = attr.getChildNodes();
 
-							    if( deviceId.startsWith("unknown,requested:") ) {
-							        deviceId = deviceId.substring(18);
-							    }
-								volume.setDeviceId(deviceId);
-							}
-						}
-					}
-				}
-			}
-		}
+                for( int j = 0; j < attachments.getLength(); j++ ) {
+                    Node item = attachments.item(j);
+
+                    if( item.getNodeName().equals("item") ) {
+                        NodeList infoList = item.getChildNodes();
+
+                        for( int k = 0; k < infoList.getLength(); k++ ) {
+                            Node info = infoList.item(k);
+
+                            name = info.getNodeName();
+                            if( name.equals("instanceId") ) {
+                                volume.setProviderVirtualMachineId(info.getFirstChild().getNodeValue().trim());
+                            }
+                            else if( name.equals("device") ) {
+                                String deviceId = info.getFirstChild().getNodeValue().trim();
+
+                                if( deviceId.startsWith("unknown,requested:") ) {
+                                    deviceId = deviceId.substring(18);
+                                }
+                                volume.setDeviceId(deviceId);
+                            }
+                        }
+                    }
+                }
+            }
+        }
         if( volume.getProviderVolumeId() == null ) {
             return null;
         }
@@ -677,23 +610,30 @@ public class EBSVolume extends AbstractVolumeSupport<AWSCloud> {
         if( volume.getDescription() == null ) {
             volume.setDescription(volume.getName());
         }
-		volume.setProviderRegionId(ctx.getRegionId());
-		return volume;
-	}
+        volume.setProviderRegionId(getContext().getRegionId());
+        return volume;
+    }
 
-  static public @Nullable VolumeState toVolumeState( Node node ) {
-    String s = AWSCloud.getTextValue( node );
-    VolumeState state;
+    static public @Nullable VolumeState toVolumeState( Node node ) {
+        String s = AWSCloud.getTextValue(node);
+        VolumeState state;
 
-    if( s.equals("creating") || s.equals("attaching") || s.equals("attached") || s.equals("detaching") || s.equals("detached") ) {
-      state = VolumeState.PENDING;
+        switch( s ) {
+            case "creating":
+            case "attaching":
+            case "attached":
+            case "detaching":
+            case "detached":
+                state = VolumeState.PENDING;
+                break;
+            case "available":
+            case "in-use":
+                state = VolumeState.AVAILABLE;
+                break;
+            default:
+                state = VolumeState.DELETED;
+                break;
+        }
+        return state;
     }
-    else if( s.equals("available") || s.equals("in-use") ) {
-      state = VolumeState.AVAILABLE;
-    }
-    else {
-      state = VolumeState.DELETED;
-    }
-    return state;
-  }
 }

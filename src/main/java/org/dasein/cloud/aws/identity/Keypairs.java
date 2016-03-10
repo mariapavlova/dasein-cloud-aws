@@ -27,17 +27,11 @@ import java.util.Locale;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
-import org.dasein.cloud.CloudException;
-import org.dasein.cloud.InternalException;
-import org.dasein.cloud.ProviderContext;
-import org.dasein.cloud.Requirement;
+import org.dasein.cloud.*;
 import org.dasein.cloud.aws.AWSCloud;
 import org.dasein.cloud.aws.compute.EC2Exception;
 import org.dasein.cloud.aws.compute.EC2Method;
-import org.dasein.cloud.identity.SSHKeypair;
-import org.dasein.cloud.identity.ServiceAction;
-import org.dasein.cloud.identity.ShellKeyCapabilities;
-import org.dasein.cloud.identity.ShellKeySupport;
+import org.dasein.cloud.identity.*;
 import org.dasein.cloud.util.APITrace;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
@@ -46,43 +40,36 @@ import org.w3c.dom.NodeList;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-public class Keypairs implements ShellKeySupport {
+public class Keypairs extends AbstractShellKeySupport<AWSCloud> {
 	static private final Logger logger = AWSCloud.getLogger(Keypairs.class);
 	
-	private AWSCloud provider = null;
     private volatile transient KeypairsCapabilities capabilities;
 
 	public Keypairs(@Nonnull AWSCloud provider) {
-		this.provider =  provider;
+		super(provider);
 	}
 	
 	@Override
 	public @Nonnull SSHKeypair createKeypair(@Nonnull String name) throws InternalException, CloudException {
-        APITrace.begin(provider, "Keypair.createKeypair");
+        APITrace.begin(getProvider(), "Keypair.createKeypair");
         try {
-            ProviderContext ctx = provider.getContext();
-
-            if( ctx == null ) {
-                throw new CloudException("No context was established for this call.");
-            }
-            String regionId = ctx.getRegionId();
-
+            String regionId = getContext().getRegionId();
             if( regionId == null ) {
-                throw new CloudException("No region was set for this request.");
+                throw new InternalException("No region was set for this request.");
             }
-            Map<String,String> parameters = provider.getStandardParameters(provider.getContext(), EC2Method.CREATE_KEY_PAIR);
+            Map<String,String> parameters = getProvider().getStandardParameters(EC2Method.CREATE_KEY_PAIR);
             EC2Method method;
             NodeList blocks;
             Document doc;
 
             parameters.put("KeyName", name);
-            method = new EC2Method(provider, parameters);
+            method = new EC2Method(getProvider(), parameters);
             try {
                 doc = method.invoke();
             }
             catch( EC2Exception e ) {
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             String material = null, fingerprint = null;
             blocks = doc.getElementsByTagName("CreateKeyPairResponse");
@@ -104,7 +91,7 @@ public class Keypairs implements ShellKeySupport {
                 }
             }
             if( fingerprint == null || material == null ) {
-                throw new CloudException("Invalid response to attempt to create the keypair");
+                throw new GeneralCloudException("Invalid response to attempt to create the keypair");
             }
             SSHKeypair key = new SSHKeypair();
 
@@ -117,7 +104,7 @@ public class Keypairs implements ShellKeySupport {
             key.setFingerprint(fingerprint);
             key.setName(name);
             key.setProviderKeypairId(name);
-            key.setProviderOwnerId(ctx.getAccountNumber());
+            key.setProviderOwnerId(getContext().getAccountNumber());
             key.setProviderRegionId(regionId);
             return key;
         }
@@ -128,15 +115,15 @@ public class Keypairs implements ShellKeySupport {
 
 	@Override
 	public void deleteKeypair(@Nonnull String name) throws InternalException, CloudException {
-        APITrace.begin(provider, "Keypair.deleteKeypair");
+        APITrace.begin(getProvider(), "Keypair.deleteKeypair");
         try {
-            Map<String,String> parameters = provider.getStandardParameters(provider.getContext(), EC2Method.DELETE_KEY_PAIR);
+            Map<String,String> parameters = getProvider().getStandardParameters(EC2Method.DELETE_KEY_PAIR);
             EC2Method method;
             NodeList blocks;
             Document doc;
 
             parameters.put("KeyName", name);
-            method = new EC2Method(provider, parameters);
+            method = new EC2Method(getProvider(), parameters);
             try {
                 doc = method.invoke();
             }
@@ -147,12 +134,12 @@ public class Keypairs implements ShellKeySupport {
                     return;
                 }
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             blocks = doc.getElementsByTagName("return");
             if( blocks.getLength() > 0 ) {
                 if( !blocks.item(0).getFirstChild().getNodeValue().equalsIgnoreCase("true") ) {
-                    throw new CloudException("Deletion of keypair denied.");
+                    throw new GeneralCloudException("Deletion of keypair denied.");
                 }
             }
         }
@@ -163,20 +150,15 @@ public class Keypairs implements ShellKeySupport {
 
 	@Override
 	public @Nullable String getFingerprint(@Nonnull String name) throws InternalException, CloudException {
-        APITrace.begin(provider, "Keypair.getFingerprint");
+        APITrace.begin(getProvider(), "Keypair.getFingerprint");
         try {
-            ProviderContext ctx = provider.getContext();
-
-            if( ctx == null ) {
-                throw new InternalException("No context was established for this call.");
-            }
-            Map<String,String> parameters = provider.getStandardParameters(provider.getContext(), EC2Method.DESCRIBE_KEY_PAIRS);
+            Map<String,String> parameters = getProvider().getStandardParameters(EC2Method.DESCRIBE_KEY_PAIRS);
             EC2Method method;
             NodeList blocks;
             Document doc;
 
             parameters.put("KeyName.1", name);
-            method = new EC2Method(provider, parameters);
+            method = new EC2Method(getProvider(), parameters);
             try {
                 doc = method.invoke();
             }
@@ -187,13 +169,13 @@ public class Keypairs implements ShellKeySupport {
                     return null;
                 }
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             blocks = doc.getElementsByTagName("keyFingerprint");
             if( blocks.getLength() > 0 ) {
                 return blocks.item(0).getFirstChild().getNodeValue().trim();
             }
-            throw new CloudException("Unable to identify key fingerprint.");
+            throw new GeneralCloudException("Unable to identify key fingerprint.");
         }
         finally {
             APITrace.end();
@@ -201,31 +183,21 @@ public class Keypairs implements ShellKeySupport {
 	}
 
     @Override
-    public Requirement getKeyImportSupport() throws CloudException, InternalException {
-        return Requirement.OPTIONAL;
-    }
-
-    @Override
     public @Nullable SSHKeypair getKeypair(@Nonnull String name) throws InternalException, CloudException {
-        APITrace.begin(provider, "Keypair.getKeypair");
+        APITrace.begin(getProvider(), "Keypair.getKeypair");
         try {
-            ProviderContext ctx = provider.getContext();
-
-            if( ctx == null ) {
-                throw new CloudException("No context was established for this call.");
-            }
-            String regionId = ctx.getRegionId();
+            String regionId = getContext().getRegionId();
 
             if( regionId == null ) {
-                throw new CloudException("No region was set for this request.");
+                throw new InternalException("No region was set for this request.");
             }
-            Map<String,String> parameters = provider.getStandardParameters(provider.getContext(), EC2Method.DESCRIBE_KEY_PAIRS);
+            Map<String,String> parameters = getProvider().getStandardParameters(EC2Method.DESCRIBE_KEY_PAIRS);
             EC2Method method;
             NodeList blocks;
             Document doc;
 
             parameters.put("KeyName.1", name);
-            method = new EC2Method(provider, parameters);
+            method = new EC2Method(getProvider(), parameters);
             try {
                 doc = method.invoke();
             }
@@ -236,7 +208,7 @@ public class Keypairs implements ShellKeySupport {
                     return null;
                 }
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             blocks = doc.getElementsByTagName("item");
             for( int i=0; i<blocks.getLength(); i++ ) {
@@ -263,7 +235,7 @@ public class Keypairs implements ShellKeySupport {
                     kp.setPrivateKey(null);
                     kp.setPublicKey(null);
                     kp.setProviderKeypairId(keyName);
-                    kp.setProviderOwnerId(ctx.getAccountNumber());
+                    kp.setProviderOwnerId(getContext().getAccountNumber());
                     kp.setProviderRegionId(regionId);
                     return kp;
                 }
@@ -275,47 +247,37 @@ public class Keypairs implements ShellKeySupport {
         }
     }
 
-	@Override
-	public @Nonnull String getProviderTermForKeypair(@Nonnull Locale locale) {
-		return "keypair";
-	}
-
     @Override
     public @Nonnull ShellKeyCapabilities getCapabilities() throws CloudException, InternalException {
         if( capabilities == null ) {
-            capabilities = new KeypairsCapabilities(provider);
+            capabilities = new KeypairsCapabilities(getProvider());
         }
         return capabilities;
     }
 
     @Override
     public @Nonnull SSHKeypair importKeypair(@Nonnull String name, @Nonnull String material) throws InternalException, CloudException {
-        APITrace.begin(provider, "Keypair.importKeypair");
+        APITrace.begin(getProvider(), "Keypair.importKeypair");
         try {
-            ProviderContext ctx = provider.getContext();
-
-            if( ctx == null ) {
-                throw new CloudException("No context was established for this call.");
-            }
-            String regionId = ctx.getRegionId();
+            String regionId = getContext().getRegionId();
 
             if( regionId == null ) {
-                throw new CloudException("No region was set for this request.");
+                throw new InternalException("No region was set for this request.");
             }
-            Map<String,String> parameters = provider.getStandardParameters(provider.getContext(), EC2Method.IMPORT_KEY_PAIR);
+            Map<String,String> parameters = getProvider().getStandardParameters(EC2Method.IMPORT_KEY_PAIR);
             EC2Method method;
             NodeList blocks;
             Document doc;
 
             parameters.put("KeyName", name);
             parameters.put("PublicKeyMaterial", material);
-            method = new EC2Method(provider, parameters);
+            method = new EC2Method(getProvider(), parameters);
             try {
                 doc = method.invoke();
             }
             catch( EC2Exception e ) {
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             String fingerprint = null;
 
@@ -334,7 +296,7 @@ public class Keypairs implements ShellKeySupport {
                 }
             }
             if( fingerprint == null ) {
-                throw new CloudException("Invalid response to attempt to create the keypair");
+                throw new GeneralCloudException("Invalid response to attempt to create the keypair");
             }
             SSHKeypair key = new SSHKeypair();
 
@@ -347,7 +309,7 @@ public class Keypairs implements ShellKeySupport {
             key.setFingerprint(fingerprint);
             key.setName(name);
             key.setProviderKeypairId(name);
-            key.setProviderOwnerId(ctx.getAccountNumber());
+            key.setProviderOwnerId(getContext().getAccountNumber());
             key.setProviderRegionId(regionId);
             return key;
         }
@@ -358,9 +320,9 @@ public class Keypairs implements ShellKeySupport {
     
     @Override
     public boolean isSubscribed() throws CloudException, InternalException {
-        APITrace.begin(provider, "Keypair.isSubscribed");
+        APITrace.begin(getProvider(), "Keypair.isSubscribed");
         try {
-            provider.testContext();
+            getProvider().testContext();
             return true;
         }
         finally {
@@ -370,25 +332,19 @@ public class Keypairs implements ShellKeySupport {
 
     @Override
 	public @Nonnull Collection<SSHKeypair> list() throws InternalException, CloudException {
-        APITrace.begin(provider, "Keypair.list");
+        APITrace.begin(getProvider(), "Keypair.list");
         try {
-            ProviderContext ctx = provider.getContext();
-
-            if( ctx == null ) {
-                throw new CloudException("No context was established for this call.");
-            }
-            String regionId = ctx.getRegionId();
-
+            String regionId = getContext().getRegionId();
             if( regionId == null ) {
-                throw new CloudException("No region was set for this request.");
+                throw new InternalException("No region was set for this request.");
             }
-            Map<String,String> parameters = provider.getStandardParameters(provider.getContext(), EC2Method.DESCRIBE_KEY_PAIRS);
-            ArrayList<SSHKeypair> keypairs = new ArrayList<SSHKeypair>();
+            Map<String,String> parameters = getProvider().getStandardParameters(EC2Method.DESCRIBE_KEY_PAIRS);
+            ArrayList<SSHKeypair> keypairs = new ArrayList<>();
             EC2Method method;
             NodeList blocks;
             Document doc;
 
-            method = new EC2Method(provider, parameters);
+            method = new EC2Method(getProvider(), parameters);
             try {
                 doc = method.invoke();
             }
@@ -399,7 +355,7 @@ public class Keypairs implements ShellKeySupport {
                     return Collections.emptyList();
                 }
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             blocks = doc.getElementsByTagName("item");
             for( int i=0; i<blocks.getLength(); i++ ) {
@@ -426,7 +382,7 @@ public class Keypairs implements ShellKeySupport {
                         keypair.setName(keyName);
                         keypair.setProviderKeypairId(keyName);
                         keypair.setFingerprint(fingerprint);
-                        keypair.setProviderOwnerId(ctx.getAccountNumber());
+                        keypair.setProviderOwnerId(getContext().getAccountNumber());
                         keypair.setProviderRegionId(regionId);
                         keypairs.add(keypair);
                     }

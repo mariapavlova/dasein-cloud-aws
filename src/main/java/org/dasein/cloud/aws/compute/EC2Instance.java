@@ -76,7 +76,7 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
     public VirtualMachine alterVirtualMachineProduct( @Nonnull String virtualMachineId, @Nonnull String productId ) throws InternalException, CloudException {
         APITrace.begin(getProvider(), "alterVirtualMachineProduct");
         try {
-            Map<String, String> parameters = getProvider().getStandardParameters(getContext(), EC2Method.MODIFY_INSTANCE_ATTRIBUTE);
+            Map<String, String> parameters = getProvider().getStandardParameters(EC2Method.MODIFY_INSTANCE_ATTRIBUTE);
             EC2Method method;
 
             parameters.put("InstanceId", virtualMachineId);
@@ -87,9 +87,9 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
                 method.invoke();
             } catch( EC2Exception e ) {
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             } catch( Throwable ex ) {
-                throw new CloudException(ex);
+                throw new GeneralCloudException(ex);
             }
             return getVirtualMachine(virtualMachineId);
         } finally {
@@ -101,7 +101,7 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
     public VirtualMachine alterVirtualMachineFirewalls( @Nonnull String virtualMachineId, @Nonnull String[] firewalls ) throws InternalException, CloudException {
         APITrace.begin(getProvider(), "alterVirtualMachineFirewalls");
         try {
-            Map<String, String> parameters = getProvider().getStandardParameters(getContext(), EC2Method.MODIFY_INSTANCE_ATTRIBUTE);
+            Map<String, String> parameters = getProvider().getStandardParameters(EC2Method.MODIFY_INSTANCE_ATTRIBUTE);
             EC2Method method;
 
             parameters.put("InstanceId", virtualMachineId);
@@ -114,9 +114,9 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
                 method.invoke();
             } catch( EC2Exception e ) {
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             } catch( Throwable ex ) {
-                throw new CloudException(ex);
+                throw new GeneralCloudException(ex);
             }
             return getVirtualMachine(virtualMachineId);
         } finally {
@@ -141,12 +141,12 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
             VirtualMachine vm = getVirtualMachine(instanceId);
 
             if( vm == null ) {
-                throw new CloudException("No such instance: " + instanceId);
+                throw new GeneralCloudException("No such instance: " + instanceId);
             }
             if( !vm.isPersistent() ) {
                 throw new OperationNotSupportedException("Instances backed by ephemeral drives are not start/stop capable");
             }
-            Map<String, String> parameters = getProvider().getStandardParameters(getContext(), EC2Method.START_INSTANCES);
+            Map<String, String> parameters = getProvider().getStandardParameters(EC2Method.START_INSTANCES);
             EC2Method method;
 
             parameters.put("InstanceId.1", instanceId);
@@ -155,7 +155,7 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
                 method.invoke();
             } catch( EC2Exception e ) {
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
         } finally {
             APITrace.end();
@@ -183,7 +183,7 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
             if( !getProvider().getEC2Provider().isAWS() ) {
                 return new TreeSet<Metric>();
             }
-            Map<String, String> parameters = getProvider().getStandardCloudWatchParameters(getContext(), EC2Method.GET_METRIC_STATISTICS);
+            Map<String, String> parameters = getProvider().getStandardCloudWatchParameters(EC2Method.GET_METRIC_STATISTICS);
             SimpleDateFormat fmt = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
             fmt.setCalendar(UTC_CALENDAR);
             EC2Method method;
@@ -206,7 +206,7 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
                 doc = method.invoke();
             } catch( EC2Exception e ) {
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             TreeSet<Metric> metrics = new TreeSet<Metric>();
             fmt = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
@@ -381,7 +381,7 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
         APITrace.begin(getProvider(), "enableVMAnalytics");
         try {
             if( getProvider().getEC2Provider().isAWS() || getProvider().getEC2Provider().isEnStratus() ) {
-                Map<String, String> parameters = getProvider().getStandardParameters(getContext(), EC2Method.MONITOR_INSTANCES);
+                Map<String, String> parameters = getProvider().getStandardParameters(EC2Method.MONITOR_INSTANCES);
                 EC2Method method;
 
                 parameters.put("InstanceId.1", instanceId);
@@ -390,7 +390,7 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
                     method.invoke();
                 } catch( EC2Exception e ) {
                     logger.error(e.getSummary());
-                    throw new CloudException(e);
+                    throw new GeneralCloudException(e);
                 }
             }
         } finally {
@@ -458,22 +458,22 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
             EC2Method method;
             NodeList blocks;
             Document doc;
-            Map<String, String> params = awsProvider.getStandardParameters(awsProvider.getContext(), EC2Method.GET_PASSWORD_DATA);
+            Map<String, String> params = awsProvider.getStandardParameters(EC2Method.GET_PASSWORD_DATA);
             params.put("InstanceId", instanceId);
             try {
                 method = new EC2Method(awsProvider, params);
             } catch( InternalException e ) {
                 logger.error(e.getMessage());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             try {
                 doc = method.invoke();
             } catch( EC2Exception e ) {
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             } catch( InternalException e ) {
                 logger.error(e.getMessage());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             blocks = doc.getElementsByTagName("passwordData");
 
@@ -493,11 +493,11 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
     public @Nullable String getUserData( @Nonnull String instanceId ) throws InternalException, CloudException {
         APITrace.begin(getProvider(), "getUserData");
         try {
-            Callable<String> callable = new GetUserDataCallable(instanceId, getProvider().getStandardParameters(getContext(), EC2Method.DESCRIBE_INSTANCE_ATTRIBUTE), getProvider(), getProvider().getEc2Url());
+            Callable<String> callable = new GetUserDataCallable(instanceId, getProvider().getStandardParameters(EC2Method.DESCRIBE_INSTANCE_ATTRIBUTE), getProvider(), getProvider().getEc2Url());
             return callable.call();
         } catch( EC2Exception e ) {
             logger.error(e.getSummary());
-            throw new CloudException(e);
+            throw new GeneralCloudException(e);
         } catch( CloudException ce ) {
             throw ce;
         } catch( Exception e ) {
@@ -531,16 +531,16 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
                 method = new EC2Method(awsProvider, params);
             } catch( InternalException e ) {
                 logger.error(e.getMessage());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             try {
                 doc = method.invoke();
             } catch( EC2Exception e ) {
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             } catch( InternalException e ) {
                 logger.error(e.getMessage());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             blocks = doc.getElementsByTagName("value");
 
@@ -554,7 +554,7 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
                             return new String(Base64.decodeBase64(encodedUserDataValue.getBytes("utf-8")), "utf-8");
                         } catch( UnsupportedEncodingException e ) {
                             logger.error(e);
-                            throw new CloudException(e);
+                            throw new GeneralCloudException(e);
                         }
                     }
                 }
@@ -568,7 +568,7 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
     public @Nonnull String getConsoleOutput( @Nonnull String instanceId ) throws InternalException, CloudException {
         APITrace.begin(getProvider(), "getConsoleOutput");
         try {
-            Map<String, String> parameters = getProvider().getStandardParameters(getContext(), EC2Method.GET_CONSOLE_OUTPUT);
+            Map<String, String> parameters = getProvider().getStandardParameters(EC2Method.GET_CONSOLE_OUTPUT);
             String output = null;
             EC2Method method;
             NodeList blocks;
@@ -585,7 +585,7 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
                     return "";
                 }
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             blocks = doc.getElementsByTagName("timestamp");
             for( int i = 0; i < blocks.getLength(); i++ ) {
@@ -598,7 +598,7 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
                     timestamp = fmt.parse(ts).getTime();
                 } catch( ParseException e ) {
                     logger.error(e);
-                    throw new CloudException(e);
+                    throw new GeneralCloudException(e);
                 }
                 if( timestamp > -1L ) {
                     break;
@@ -631,7 +631,7 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
     public @Nonnull Iterable<String> listFirewalls( @Nonnull String instanceId ) throws InternalException, CloudException {
         APITrace.begin(getProvider(), "listFirewallsForVM");
         try {
-            Map<String, String> parameters = getProvider().getStandardParameters(getContext(), EC2Method.DESCRIBE_INSTANCES);
+            Map<String, String> parameters = getProvider().getStandardParameters(EC2Method.DESCRIBE_INSTANCES);
             List<String> firewalls = new ArrayList<String>();
             EC2Method method;
             NodeList blocks;
@@ -648,7 +648,7 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
                     return firewalls;
                 }
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             blocks = doc.getElementsByTagName("groupSet");
             for( int i = 0; i < blocks.getLength(); i++ ) {
@@ -682,7 +682,7 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
         ProviderContext ctx = getContext();
 
         if( ctx == null ) {
-            throw new CloudException("No context was established for this request");
+            throw new GeneralCloudException("No context was established for this request");
         }
 
         Future<Iterable<IpAddress>> ipPoolFuture = null;
@@ -702,7 +702,7 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
         }
 
 
-        Map<String, String> parameters = getProvider().getStandardParameters(getContext(), EC2Method.DESCRIBE_INSTANCES);
+        Map<String, String> parameters = getProvider().getStandardParameters(EC2Method.DESCRIBE_INSTANCES);
         EC2Method method;
         NodeList blocks;
         Document doc;
@@ -719,7 +719,7 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
                 return results;
             }
             logger.error(e.getSummary());
-            throw new CloudException(e);
+            throw new GeneralCloudException(e);
         }
         blocks = doc.getElementsByTagName("instancesSet");
         for( int i = 0; i < blocks.getLength(); i++ ) {
@@ -1026,9 +1026,9 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
         try {
             ProviderContext ctx = getContext();
             if( ctx == null ) {
-                throw new CloudException("No context was established for this request");
+                throw new GeneralCloudException("No context was established for this request");
             }
-            Map<String, String> params = getProvider().getStandardParameters(getContext(), EC2Method.DESCRIBE_INSTANCE_STATUS);
+            Map<String, String> params = getProvider().getStandardParameters(EC2Method.DESCRIBE_INSTANCE_STATUS);
             EC2Method method;
             NodeList blocks;
             Document doc;
@@ -1038,7 +1038,7 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
                 method = new EC2Method(getProvider(), params);
             } catch( InternalException e ) {
                 logger.error(e.getMessage());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             try {
                 doc = method.invoke();
@@ -1048,10 +1048,10 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
                     return null;
                 }
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             } catch( InternalException e ) {
                 logger.error(e.getMessage());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             ArrayList<VirtualMachineStatus> list = new ArrayList<VirtualMachineStatus>();
             blocks = doc.getElementsByTagName("instanceStatusSet");
@@ -1133,7 +1133,7 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
     public boolean isSubscribed() throws InternalException, CloudException {
         APITrace.begin(getProvider(), "isSubscribedVirtualMachine");
         try {
-            Map<String, String> parameters = getProvider().getStandardParameters(getContext(), EC2Method.DESCRIBE_INSTANCES);
+            Map<String, String> parameters = getProvider().getStandardParameters(EC2Method.DESCRIBE_INSTANCES);
             EC2Method method = new EC2Method(getProvider(), parameters);
 
             try {
@@ -1149,7 +1149,7 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
                     return false;
                 }
                 logger.warn(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
         } finally {
             APITrace.end();
@@ -1211,6 +1211,7 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
             List<VirtualMachineProduct> list = new ArrayList<VirtualMachineProduct>();
 
             try {
+                VirtualMachineProduct[] products1 = VirtualMachineProduct.fromConfigurationFile("/org/dasein/cloud/aws/vmproducts.json", getContext());
                 InputStream input = EC2Instance.class.getResourceAsStream("/org/dasein/cloud/aws/vmproducts.json");
 
                 if( input != null ) {
@@ -1492,7 +1493,7 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
 
         ProviderContext ctx = getContext();
         if( ctx == null ) {
-            throw new CloudException("No context was established for this request");
+            throw new GeneralCloudException("No context was established for this request");
         }
         MachineImage img = null;
         final ComputeServices computeServices = getProvider().getComputeServices();
@@ -1503,7 +1504,7 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
         if( img == null ) {
             throw new AWSResourceNotFoundException("No such machine image: " + cfg.getMachineImageId());
         }
-        Map<String, String> parameters = getProvider().getStandardParameters(getContext(), EC2Method.RUN_INSTANCES);
+        Map<String, String> parameters = getProvider().getStandardParameters(EC2Method.RUN_INSTANCES);
         String ramdiskImage = ( String ) cfg.getMetaData().get("ramdiskImageId"), kernelImage = ( String ) cfg.getMetaData().get("kernelImageId");
         EC2Method method;
         NodeList blocks;
@@ -1649,7 +1650,7 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
                 return servers;
             }
             logger.error(e.getSummary());
-            throw new CloudException(e);
+            throw new GeneralCloudException(e);
         }
         blocks = doc.getElementsByTagName("instancesSet");
 
@@ -1769,7 +1770,7 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
 
                 while( timeout > System.currentTimeMillis() ) {
                     try {
-                        Map<String, String> params = getProvider().getStandardParameters(getContext(), EC2Method.MODIFY_INSTANCE_ATTRIBUTE);
+                        Map<String, String> params = getProvider().getStandardParameters(EC2Method.MODIFY_INSTANCE_ATTRIBUTE);
                         EC2Method m;
 
                         params.put("InstanceId", instanceId);
@@ -1812,9 +1813,9 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
             ProviderContext ctx = getContext();
 
             if( ctx == null ) {
-                throw new CloudException("No context was established for this request");
+                throw new GeneralCloudException("No context was established for this request");
             }
-            Map<String, String> parameters = getProvider().getStandardParameters(getContext(), EC2Method.DESCRIBE_INSTANCES);
+            Map<String, String> parameters = getProvider().getStandardParameters(EC2Method.DESCRIBE_INSTANCES);
             EC2Method method = new EC2Method(getProvider(), parameters);
             ArrayList<ResourceStatus> list = new ArrayList<ResourceStatus>();
             NodeList blocks;
@@ -1824,7 +1825,7 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
                 doc = method.invoke();
             } catch( EC2Exception e ) {
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             blocks = doc.getElementsByTagName("instancesSet");
             for( int i = 0; i < blocks.getLength(); i++ ) {
@@ -1901,7 +1902,7 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
             ProviderContext ctx = getContext();
 
             if( ctx == null ) {
-                throw new CloudException("No context was established for this request");
+                throw new GeneralCloudException("No context was established for this request");
             }
 
             Future<Iterable<IpAddress>> ipPoolFuture = null;
@@ -1920,7 +1921,7 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
                 }
             }
 
-            Map<String, String> parameters = getProvider().getStandardParameters(getContext(), EC2Method.DESCRIBE_INSTANCES);
+            Map<String, String> parameters = getProvider().getStandardParameters(EC2Method.DESCRIBE_INSTANCES);
 
             AWSCloud.addExtraParameters(parameters, extraParameters);
 
@@ -1933,7 +1934,7 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
                 doc = method.invoke();
             } catch( EC2Exception e ) {
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
             blocks = doc.getElementsByTagName("instancesSet");
             for( int i = 0; i < blocks.getLength(); i++ ) {
@@ -2026,12 +2027,12 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
             VirtualMachine vm = getVirtualMachine(instanceId);
 
             if( vm == null ) {
-                throw new CloudException("No such instance: " + instanceId);
+                throw new GeneralCloudException("No such instance: " + instanceId);
             }
             if( !vm.isPersistent() ) {
                 throw new OperationNotSupportedException("Instances backed by ephemeral drives are not start/stop capable");
             }
-            Map<String, String> parameters = getProvider().getStandardParameters(getContext(), EC2Method.STOP_INSTANCES);
+            Map<String, String> parameters = getProvider().getStandardParameters(EC2Method.STOP_INSTANCES);
             EC2Method method;
 
             parameters.put("InstanceId.1", instanceId);
@@ -2043,7 +2044,7 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
                 method.invoke();
             } catch( EC2Exception e ) {
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
         } finally {
             APITrace.end();
@@ -2054,7 +2055,7 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
     public void reboot( @Nonnull String instanceId ) throws CloudException, InternalException {
         APITrace.begin(getProvider(), "rebootVM");
         try {
-            Map<String, String> parameters = getProvider().getStandardParameters(getContext(), EC2Method.REBOOT_INSTANCES);
+            Map<String, String> parameters = getProvider().getStandardParameters(EC2Method.REBOOT_INSTANCES);
             EC2Method method;
 
             parameters.put("InstanceId.1", instanceId);
@@ -2063,7 +2064,7 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
                 method.invoke();
             } catch( EC2Exception e ) {
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
         } finally {
             APITrace.end();
@@ -2084,7 +2085,7 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
     public void terminate( @Nonnull String instanceId, @Nullable String explanation ) throws InternalException, CloudException {
         APITrace.begin(getProvider(), "terminateVM");
         try {
-            Map<String, String> parameters = getProvider().getStandardParameters(getContext(), EC2Method.TERMINATE_INSTANCES);
+            Map<String, String> parameters = getProvider().getStandardParameters(EC2Method.TERMINATE_INSTANCES);
             EC2Method method;
 
             parameters.put("InstanceId.1", instanceId);
@@ -2093,7 +2094,7 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
                 method.invoke();
             } catch( EC2Exception e ) {
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
         } finally {
             APITrace.end();
@@ -2305,7 +2306,7 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
                     server.setCreationTimestamp(server.getLastBootTimestamp());
                 } catch( ParseException e ) {
                     logger.error(e);
-                    throw new CloudException(e);
+                    throw new GeneralCloudException(e);
                 }
             }
             else if( name.equals("platform") ) {
@@ -2578,7 +2579,7 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
         APITrace.begin(getProvider(), "disableVMAnalytics");
         try {
             if( getProvider().getEC2Provider().isAWS() || getProvider().getEC2Provider().isEnStratus() ) {
-                Map<String, String> parameters = getProvider().getStandardParameters(getContext(), EC2Method.UNMONITOR_INSTANCES);
+                Map<String, String> parameters = getProvider().getStandardParameters(EC2Method.UNMONITOR_INSTANCES);
                 EC2Method method;
 
                 parameters.put("InstanceId.1", instanceId);
@@ -2587,7 +2588,7 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
                     method.invoke();
                 } catch( EC2Exception e ) {
                     logger.error(e.getSummary());
-                    throw new CloudException(e);
+                    throw new GeneralCloudException(e);
                 }
             }
         } finally {
@@ -2650,7 +2651,7 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
             else {
                 prd.setRamSize(new Storage<Megabyte>(512, Storage.MEGABYTE));
             }
-            if( json.has("generation") && json.getString("generation").equalsIgnoreCase("previous")) {      	
+            if( json.has("generation") && json.getString("generation").equalsIgnoreCase("previous")) {
                    prd.setStatusDeprecated();
             }
             if( json.has("standardHourlyRates") ) {
@@ -2728,14 +2729,14 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
         if( getProvider().getEC2Provider().isAWS() ) {
             try {
                 APITrace.begin(getProvider(), "cancelSpotVirtualMachineRequest");
-                Map<String, String> parameters = getProvider().getStandardParameters(getContext(), EC2Method.DELETE_SPOT_DATAFEED_SUBSCRIPTION);
+                Map<String, String> parameters = getProvider().getStandardParameters(EC2Method.DELETE_SPOT_DATAFEED_SUBSCRIPTION);
                 EC2Method method;
                 method = new EC2Method(getProvider(), parameters);
                 try {
                     method.invoke();
                 } catch( EC2Exception e ) {
                     logger.error(e.getSummary());
-                    throw new CloudException(e);
+                    throw new GeneralCloudException(e);
                 }
             } finally {
                 APITrace.end();
@@ -2751,7 +2752,7 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
         if( getProvider().getEC2Provider().isAWS() ) {
             try {
                 APITrace.begin(getProvider(), "cancelSpotVirtualMachineRequest");
-                Map<String, String> parameters = getProvider().getStandardParameters(getContext(), EC2Method.CANCEL_SPOT_INSTANCE_REQUESTS);
+                Map<String, String> parameters = getProvider().getStandardParameters(EC2Method.CANCEL_SPOT_INSTANCE_REQUESTS);
                 parameters.put("SpotInstanceRequestId.1", providerSpotInstanceRequestID);
                 EC2Method method;
                 method = new EC2Method(getProvider(), parameters);
@@ -2759,7 +2760,7 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
                     method.invoke();
                 } catch( EC2Exception e ) {
                     logger.error(e.getSummary());
-                    throw new CloudException(e);
+                    throw new GeneralCloudException(e);
                 }
             } finally {
                 APITrace.end();
@@ -2775,7 +2776,7 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
         if( getProvider().getEC2Provider().isAWS() ) {
             try {
                 APITrace.begin(getProvider(), "createSpotVirtualMachineRequest");
-                Map<String, String> parameters = getProvider().getStandardParameters(getContext(), EC2Method.REQUEST_SPOT_INSTANCES);
+                Map<String, String> parameters = getProvider().getStandardParameters(EC2Method.REQUEST_SPOT_INSTANCES);
                 parameters.put("SpotPrice", String.valueOf(options.getMaximumPrice()));
                 if( options.getVmCount() > 1 ) {
                     parameters.put("InstanceCount", String.valueOf(options.getVmCount()));
@@ -2825,7 +2826,7 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
                     doc = method.invoke();
                 } catch( EC2Exception e ) {
                     logger.error(e.getSummary());
-                    throw new CloudException(e);
+                    throw new GeneralCloudException(e);
                 }
                 blocks = doc.getElementsByTagName("spotInstanceRequestSet");
 
@@ -2847,7 +2848,7 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
         else {
             throw new OperationNotSupportedException("Spot VMs are not supported in " + getProvider().getCloudName());
         }
-        throw new CloudException("Could not execute the spot VMs request.");
+        throw new GeneralCloudException("Could not execute the spot VMs request.");
     }
 
     @Override
@@ -2856,7 +2857,7 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
             try {
                 APITrace.begin(getProvider(), "enableSpotDataFeedSubscription");
 
-                Map<String, String> parameters = getProvider().getStandardParameters(getContext(), EC2Method.CREATE_SPOT_DATAFEED_SUBSCRIPTION);
+                Map<String, String> parameters = getProvider().getStandardParameters(EC2Method.CREATE_SPOT_DATAFEED_SUBSCRIPTION);
                 parameters.put("Bucket", s3BucketName);
                 EC2Method method;
                 method = new EC2Method(getProvider(), parameters);
@@ -2864,7 +2865,7 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
                     method.invoke();
                 } catch( EC2Exception e ) {
                     logger.error(e.getSummary());
-                    throw new CloudException(e);
+                    throw new GeneralCloudException(e);
                 }
             } finally {
                 APITrace.end();
@@ -2911,7 +2912,7 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
         }
 
         try {
-            Map<String, String> parameters = getProvider().getStandardParameters(getContext(), EC2Method.DESCRIBE_SPOT_INSTANCE_REQUESTS);
+            Map<String, String> parameters = getProvider().getStandardParameters(EC2Method.DESCRIBE_SPOT_INSTANCE_REQUESTS);
             int paramIndex = 1;
             if( options != null && options.hasCriteria() ) {
                 if( options.getSpotRequestIds() != null ) {
@@ -2948,7 +2949,7 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
                 doc = method.invoke();
             } catch( EC2Exception e ) {
                 logger.error(e.getSummary());
-                throw new CloudException(e);
+                throw new GeneralCloudException(e);
             }
 
             List<SpotVirtualMachineRequest> results = new ArrayList<SpotVirtualMachineRequest>();
@@ -2988,7 +2989,7 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
      * @throws InternalException
      */
     private String fetchSpotPriceHistories( Map<Pair<String, String>, List<SpotPrice>> prices, @Nullable SpotPriceHistoryFilterOptions options, String nextToken ) throws CloudException, InternalException {
-        Map<String, String> parameters = getProvider().getStandardParameters(getContext(), EC2Method.DESCRIBE_SPOT_PRICE_HISTORY);
+        Map<String, String> parameters = getProvider().getStandardParameters(EC2Method.DESCRIBE_SPOT_PRICE_HISTORY);
         EC2Method method;
         Document doc;
         NodeList blocks;
@@ -3013,7 +3014,7 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
             doc = method.invoke();
         } catch( EC2Exception e ) {
             logger.error(e.getSummary());
-            throw new CloudException(e);
+            throw new GeneralCloudException(e);
         }
         blocks = doc.getElementsByTagName("spotPriceHistorySet");
 
