@@ -778,11 +778,9 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
 
     @Override
     public @Nullable VirtualMachineProduct getProduct( @Nonnull String sizeId ) throws CloudException, InternalException {
-        for( Architecture a : getCapabilities().listSupportedArchitectures() ) {
-            for( VirtualMachineProduct prd : listProducts(null, a) ) {
-                if( prd.getProviderProductId().equals(sizeId) ) {
-                    return prd;
-                }
+        for( VirtualMachineProduct prd : listProducts(null) ) {
+            if( prd.getProviderProductId().equals(sizeId) ) {
+                return prd;
             }
         }
         return null;
@@ -1158,13 +1156,14 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
 
     @Override
     public @Nonnull Iterable<VirtualMachineProduct> listAllProducts() throws InternalException, CloudException{
-        return listProducts(VirtualMachineProductFilterOptions.getInstance(), null);
+        return listProducts(VirtualMachineProductFilterOptions.getInstance());
     }
 
     @Override
     public @Nonnull Iterable<VirtualMachineProduct> listProducts(@Nonnull String machineImageId, @Nonnull VirtualMachineProductFilterOptions options) throws InternalException, CloudException {
         MachineImage image = getProvider().getComputeServices().getImageSupport().getImage(machineImageId);
-        Iterable<VirtualMachineProduct> allProducts = listProducts(options, image.getArchitecture());
+        options.withArchitecture(image.getArchitecture());
+        Iterable<VirtualMachineProduct> allProducts = listProducts(options);
         List<VirtualMachineProduct> products = new ArrayList<VirtualMachineProduct>();
         for( VirtualMachineProduct product : allProducts ) {
             String vt = product.getProviderMetadata().get("vt");
@@ -1197,252 +1196,15 @@ public class EC2Instance extends AbstractVMSupport<AWSCloud> {
         return products;
     }
 
-    protected @Nonnull Iterable<VirtualMachineProduct> listProducts( @Nullable VirtualMachineProductFilterOptions options, @Nullable Architecture architecture ) throws InternalException, CloudException {
-        ProviderContext ctx = getContext();
-        // FIXME: until core fixes the annotation for architecture let's assume it's nullable
-        String cacheName = "productsALL";
-        if( architecture != null ) {
-            cacheName = "products" + architecture.name();
-        }
-        Cache<VirtualMachineProduct> cache = Cache.getInstance(getProvider(), cacheName, VirtualMachineProduct.class, CacheLevel.REGION, new TimePeriod<Day>(1, TimePeriod.DAY));
-        Iterable<VirtualMachineProduct> products = cache.get(ctx);
-
-        if( products == null ) {
-            List<VirtualMachineProduct> list = new ArrayList<VirtualMachineProduct>();
-
-            try {
-                VirtualMachineProduct[] products1 = VirtualMachineProduct.fromConfigurationFile("/org/dasein/cloud/aws/vmproducts.json", getContext());
-                InputStream input = EC2Instance.class.getResourceAsStream("/org/dasein/cloud/aws/vmproducts.json");
-
-                if( input != null ) {
-                    BufferedReader reader = new BufferedReader(new InputStreamReader(input));
-                    StringBuilder json = new StringBuilder();
-                    String line;
-
-                    while( ( line = reader.readLine() ) != null ) {
-                        json.append(line);
-                        json.append("\n");
-                    }
-                    JSONArray arr = new JSONArray(json.toString());
-                    JSONObject toCache = null;
-
-                    for( int i = 0; i < arr.length(); i++ ) {
-                        JSONObject productSet = arr.getJSONObject(i);
-                        String cloud, providerName;
-
-                        if( productSet.has("cloud") ) {
-                            cloud = productSet.getString("cloud");
-                        }
-                        else {
-                            continue;
-                        }
-                        if( productSet.has("provider") ) {
-                            providerName = productSet.getString("provider");
-                        }
-                        else {
-                            continue;
-                        }
-                        if( !productSet.has("products") ) {
-                            continue;
-                        }
-                        if( toCache == null || ( providerName.equals("AWS") && cloud.equals("AWS") ) ) {
-                            toCache = productSet;
-                        }
-                        if( providerName.equalsIgnoreCase(getProvider().getProviderName()) && cloud.equalsIgnoreCase(getProvider().getCloudName()) ) {
-                            toCache = productSet;
-                            break;
-                        }
-                    }
-                    if( toCache == null ) {
-                        logger.warn("No products were defined");
-                        return Collections.emptyList();
-                    }
-                    JSONArray plist = toCache.getJSONArray("products");
-
-                    for( int i = 0; i < plist.length(); i++ ) {
-                        JSONObject product = plist.getJSONObject(i);
-                        boolean supported = true;
-
-                        if( architecture != null ) {
-                            supported = false;
-                            if( product.has("architectures") ) {
-                                JSONArray architectures = product.getJSONArray("architectures");
-
-                                for( int j = 0; j < architectures.length(); j++ ) {
-                                    String a = architectures.getString(j);
-
-                                    if( architecture.name().equals(a) ) {
-                                        supported = true;
-                                        break;
-                                    }
-                                }
-                            }
-                            if( !supported ) {
-                                continue;
-                            }
-                        }
-                        if( product.has("excludesRegions") ) {
-                            JSONArray regions = product.getJSONArray("excludesRegions");
-
-                            for( int j = 0; j < regions.length(); j++ ) {
-                                String r = regions.getString(j);
-
-                                if( r.equals(ctx.getRegionId()) ) {
-                                    supported = false;
-                                    break;
-                                }
-                            }
-                        }
-                        if( !supported ) {
-                            continue;
-                        }
-                        VirtualMachineProduct prd = toProduct(product);
-
-                        if( prd != null ) {
-                            if( options != null) {
-                                if( options.matches(prd) ) {
-                                    list.add(prd);
-                                }
-                            }
-                            else {
-                                list.add(prd);
-                            }
-                        }
-
-                    }
-
-                }
-                else {
-                    logger.warn("No standard products resource exists for /org/dasein/cloud/aws/vmproducts.json");
-                }
-                input = EC2Instance.class.getResourceAsStream("/org/dasein/cloud/aws/vmproducts-custom.json");
-                if( input != null ) {
-                    ArrayList<VirtualMachineProduct> customList = new ArrayList<VirtualMachineProduct>();
-                    TreeSet<String> discard = new TreeSet<String>();
-                    boolean discardAll = false;
-
-                    BufferedReader reader = new BufferedReader(new InputStreamReader(input));
-                    StringBuilder json = new StringBuilder();
-                    String line;
-
-                    while( ( line = reader.readLine() ) != null ) {
-                        json.append(line);
-                        json.append("\n");
-                    }
-                    JSONArray arr = new JSONArray(json.toString());
-                    JSONObject toCache = null;
-
-                    for( int i = 0; i < arr.length(); i++ ) {
-                        JSONObject listing = arr.getJSONObject(i);
-                        String cloud, providerName, endpoint = null;
-
-                        if( listing.has("cloud") ) {
-                            cloud = listing.getString("cloud");
-                        }
-                        else {
-                            continue;
-                        }
-                        if( listing.has("provider") ) {
-                            providerName = listing.getString("provider");
-                        }
-                        else {
-                            continue;
-                        }
-                        if( listing.has("endpoint") ) {
-                            endpoint = listing.getString("endpoint");
-                        }
-                        if( !cloud.equals(getProvider().getCloudName()) || !providerName.equals(getProvider().getProviderName()) ) {
-                            continue;
-                        }
-                        if( endpoint != null && endpoint.equals(ctx.getCloud().getEndpoint()) ) {
-                            toCache = listing;
-                            break;
-                        }
-                        if( endpoint == null && toCache == null ) {
-                            toCache = listing;
-                        }
-                    }
-                    if( toCache != null ) {
-                        if( toCache.has("discardDefaults") ) {
-                            discardAll = toCache.getBoolean("discardDefaults");
-                        }
-                        if( toCache.has("discard") ) {
-                            JSONArray dlist = toCache.getJSONArray("discard");
-
-                            for( int i = 0; i < dlist.length(); i++ ) {
-                                discard.add(dlist.getString(i));
-                            }
-                        }
-                        if( toCache.has("products") ) {
-                            JSONArray plist = toCache.getJSONArray("products");
-
-                            for( int i = 0; i < plist.length(); i++ ) {
-                                JSONObject product = plist.getJSONObject(i);
-                                boolean supported = true;
-                                
-                                if( architecture != null ) {
-                                    supported = false;
-                                    if( product.has("architectures") ) {
-                                        JSONArray architectures = product.getJSONArray("architectures");
-
-                                        for( int j = 0; j < architectures.length(); j++ ) {
-                                            String a = architectures.getString(j);
-
-                                            if( architecture.name().equals(a) ) {
-                                                supported = true;
-                                                break;
-                                            }
-                                        }
-                                    }
-                                    if( !supported ) {
-                                        continue;
-                                    }
-                                }
-                                if( product.has("excludesRegions") ) {
-                                    JSONArray regions = product.getJSONArray("excludesRegions");
-
-                                    for( int j = 0; j < regions.length(); j++ ) {
-                                        String r = regions.getString(j);
-
-                                        if( r.equals(ctx.getRegionId()) ) {
-                                            supported = false;
-                                            break;
-                                        }
-                                    }
-                                }
-                                if( !supported ) {
-                                    continue;
-                                }
-                                VirtualMachineProduct prd = toProduct(product);
-
-                                if( prd != null ) {
-                                    customList.add(prd);
-                                }
-                            }
-                        }
-                        if( !discardAll ) {
-                            for( VirtualMachineProduct product : list ) {
-                                if( !discard.contains(product.getProviderProductId()) ) {
-                                    customList.add(product);
-                                }
-                            }
-                        }
-                        list = customList;
-                    }
-                }
-                products = list;
-                cache.put(ctx, products);
-
-            } catch( IOException e ) {
-                throw new InternalException(e);
-            } catch( JSONException e ) {
-                throw new InternalException(e);
+    protected @Nonnull Iterable<VirtualMachineProduct> listProducts( @Nullable VirtualMachineProductFilterOptions options) throws InternalException, CloudException {
+        List<VirtualMachineProduct> products = new ArrayList<>();
+        for( VirtualMachineProduct product : VirtualMachineProduct.fromConfigurationFile("/org/dasein/cloud/aws/vmproducts.json", getContext())) {
+            if(( options != null && options.matches(product)) || options == null) {
+                products.add(product);
             }
         }
         return products;
     }
-
-
 
     private String guess( String privateDnsAddress ) {
         String dnsAddress = privateDnsAddress;

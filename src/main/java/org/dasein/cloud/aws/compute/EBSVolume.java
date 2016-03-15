@@ -206,22 +206,7 @@ public class EBSVolume extends AbstractVolumeSupport<AWSCloud> {
 
     @Override
     public @Nonnull Iterable<VolumeProduct> listVolumeProducts() throws InternalException, CloudException {
-        VolumeProvider volumeProvider = VolumeProvider.fromFile("/org/dasein/cloud/aws/volproducts.json", "AWS");
-        String regionId = getContext().getRegionId();
-        List<org.dasein.cloud.aws.model.VolumeProduct> products = volumeProvider.getProducts();
-        List<VolumeProduct> volumeProducts = new ArrayList<VolumeProduct>();
-        for( org.dasein.cloud.aws.model.VolumeProduct product : products ) {
-            VolumePrice price = volumeProvider.findProductPrice(regionId, product.getId());
-            if( price == null ) {
-                continue;
-            }
-            VolumeProduct volumeProduct = VolumeProduct.getInstance(product.getId(), product.getName(), product.getDescription(), VolumeType.valueOf(product.getType().toUpperCase()), product.getMinIops(), product.getMaxIops(), price.getMonthly(), price.getIops());
-            volumeProduct.withMaxIopsRatio(product.getIopsToGb());
-            volumeProduct.withMaxVolumeSize(new Storage<>(product.getMaxSize(), Storage.GIGABYTE));
-            volumeProduct.withMinVolumeSize(new Storage<>(product.getMinSize(), Storage.GIGABYTE));
-            volumeProducts.add(volumeProduct);
-        }
-        return volumeProducts;
+        return Arrays.asList(VolumeProduct.fromConfigurationFile("/org/dasein/cloud/aws/volproducts.json", getContext()));
     }
 
     @Override

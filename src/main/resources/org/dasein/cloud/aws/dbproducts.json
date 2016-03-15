@@ -3,7 +3,7 @@
   "provider" : "AWS",
   "created" : 1418043471950,
   "engines" : [ {
-    "name" : "MySQL",
+    "name" : "MYSQL",
     "regions" : [ {
       "name" : "us-east-1",
       "products" : [ {
@@ -1860,7 +1860,7 @@
       } ]
     } ]
   }, {
-    "name" : "oracle-se1",
+    "name" : "ORACLE_SE1",
     "regions" : [ {
       "name" : "us-east-1",
       "products" : [ {
@@ -3762,7 +3762,7 @@
       } ]
     } ]
   }, {
-    "name" : "oracle-se",
+    "name" : "ORACLE_SE",
     "regions" : [ {
       "name" : "us-east-1",
       "products" : [ {
@@ -4728,7 +4728,7 @@
       } ]
     } ]
   }, {
-    "name" : "oracle-ee",
+    "name" : "ORACLE_EE",
     "regions" : [ {
       "name" : "us-east-1",
       "products" : [ {
@@ -5694,7 +5694,7 @@
       } ]
     } ]
   }, {
-    "name" : "sqlserver-ex",
+    "name" : "SQLSERVER_EX",
     "regions" : [ {
       "name" : "us-east-1",
       "products" : [ {
@@ -5967,7 +5967,7 @@
       } ]
     } ]
   }, {
-    "name" : "sqlserver-web",
+    "name" : "SQLSERVER_WEB",
     "regions" : [ {
       "name" : "us-east-1",
       "products" : [ {
@@ -6699,7 +6699,7 @@
       } ]
     } ]
   }, {
-    "name" : "sqlserver-se",
+    "name" : "SQLSERVER_SE",
     "regions" : [ {
       "name" : "us-east-1",
       "products" : [ {
@@ -8601,7 +8601,7 @@
       } ]
     } ]
   }, {
-    "name" : "sqlserver-ee",
+    "name" : "SQLSERVER_EE",
     "regions" : [ {
       "name" : "us-east-1",
       "products" : [ {
@@ -9774,7 +9774,7 @@
       } ]
     } ]
   }, {
-    "name" : "postgres",
+    "name" : "POSTGRES",
     "regions" : [ {
       "name" : "us-east-1",
       "products" : [ {

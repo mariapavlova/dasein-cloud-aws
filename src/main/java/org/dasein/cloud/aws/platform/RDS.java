@@ -694,39 +694,11 @@ public class RDS extends AbstractRelationalDatabaseSupport<AWSCloud> {
     
     @Override
     public Iterable<DatabaseProduct> listDatabaseProducts( DatabaseEngine engine ) throws CloudException, InternalException {
+        DatabaseProduct[] allProducts = DatabaseProduct.fromConfigurationFile("/org/dasein/cloud/aws/dbproducts.json", getContext());
         List<DatabaseProduct> products = new ArrayList<>();
-        DatabaseProvider databaseProvider = DatabaseProvider.fromFile("/org/dasein/cloud/aws/dbproducts.json", "AWS");
-
-        org.dasein.cloud.aws.model.DatabaseEngine databaseEngine = databaseProvider.findEngine(getEngineString(engine));
-
-        if( databaseEngine != null ) {
-            for ( DatabaseRegion region : databaseEngine.getRegions() ) {
-                if( region.getName().equalsIgnoreCase( getContext().getRegionId()) ) {
-                    for( org.dasein.cloud.aws.model.DatabaseProduct databaseProduct : region.getProducts() ) {
-                        DatabaseProduct product = new DatabaseProduct(databaseProduct.getName());
-                        product.setEngine(engine);
-                        product.setHighAvailability(databaseProduct.isHighAvailability());
-                        product.setStandardHourlyRate(databaseProduct.getHourlyRate());
-                        product.setStandardIoRate(databaseProduct.getIoRate());
-                        product.setStandardStorageRate(databaseProduct.getStorageRate());
-                        DatabaseLicenseModel lic = GENERAL_PUBLIC_LICENSE;
-                        if( "included".equalsIgnoreCase(databaseProduct.getLicense())) {
-                            lic = LICENSE_INCLUDED;
-                        } else if( "byol".equalsIgnoreCase(databaseProduct.getLicense())) {
-                            lic = BRING_YOUR_OWN_LICENSE;
-                        } else if( "postgres".equalsIgnoreCase(databaseProduct.getLicense())) {
-                            lic = POSTGRESQL_LICENSE;
-                        }
-                        product.setLicenseModel(lic);
-                        product.setCurrency(databaseProduct.getCurrency());
-                        DatabaseProductDefinition def = databaseProvider.findProductDefinition(databaseProduct.getName());
-                        if( def != null) {
-                            product.setName(String.format("%.2fGB RAM, %d CPU, %s Network Performance", def.getMemory(), def.getvCpus(), def.getNetworkPerformance()));
-                        }
-                        product.setStorageInGigabytes(databaseProduct.getMinStorage());
-                        products.add(product);
-                    }
-                }
+        for (DatabaseProduct product : allProducts) {
+            if (product.getEngine().equals(engine)) {
+                products.add(product);
             }
         }
         return products;

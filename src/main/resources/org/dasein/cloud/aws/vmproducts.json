@@ -2,6 +2,7 @@
   {
     "provider": "AWS",
     "cloud": "AWS",
+    "created": 1429015313000,
     "products": [
       {
         "excludesRegions": ["eu-central-1"],
@@ -12,7 +13,7 @@
         "cpuCount": 1,
         "rootVolumeSizeInGb": 160,
         "ramSizeInMb": 1825,
-        "generation": "previous",
+        "current": false,
         "customProperties": {
           "vt": ["paravirtual", "hvm"],
           "rdt": ["ebs", "instance"]
@@ -27,9 +28,17 @@
         "cpuCount": 1,
         "rootVolumeSizeInGb": 410,
         "ramSizeInMb": 4026,
-        "generation": "previous",
-        "vt": ["paravirtual", "hvm"],
-        "rdt": ["ebs", "instance"]
+        "current": false,
+        "customProperties": {
+          "vt": [
+            "paravirtual",
+            "hvm"
+          ],
+          "rdt": [
+            "ebs",
+            "instance"
+          ]
+        }
       },
       {
         "excludesRegions": ["eu-central-1"],
@@ -40,9 +49,16 @@
         "cpuCount": 2,
         "rootVolumeSizeInGb": 850,
         "ramSizeInMb": 8053,
-        "generation": "previous",
-        "vt": ["paravirtual"],
-        "rdt": ["ebs", "instance"]
+        "current": false,
+        "customProperties": {
+          "vt": [
+            "paravirtual"
+          ],
+          "rdt": [
+            "ebs",
+            "instance"
+          ]
+        }
       },
       {
         "excludesRegions": ["eu-central-1"],
@@ -53,9 +69,16 @@
         "cpuCount": 4,
         "rootVolumeSizeInGb": 1690,
         "ramSizeInMb": 16106,
-        "generation": "previous",
-        "vt": ["paravirtual"],
-        "rdt": ["ebs", "instance"]
+        "current": false,
+        "customProperties": {
+          "vt": [
+            "paravirtual"
+          ],
+          "rdt": [
+            "ebs",
+            "instance"
+          ]
+        }
       },
       {
         "architectures": ["I64"],
@@ -65,9 +88,17 @@
         "cpuCount": 4,
         "rootVolumeSizeInGb": 1,
         "ramSizeInMb": 16106,
-        "generation": "current",
-        "vt": ["paravirtual", "hvm"],
-        "rdt": ["ebs", "instance"]
+        "current": true,
+        "customProperties": {
+          "vt": [
+            "paravirtual",
+            "hvm"
+          ],
+          "rdt": [
+            "ebs",
+            "instance"
+          ]
+        }
       },
       {
         "architectures": ["I64"],
@@ -77,9 +108,17 @@
         "cpuCount": 2,
         "rootVolumeSizeInGb": 32,
         "ramSizeInMb": 7680,
-        "generation": "current",
-        "vt": ["paravirtual", "hvm"],
-        "rdt": ["ebs", "instance"]
+        "current": true,
+        "customProperties": {
+          "vt": [
+            "paravirtual",
+            "hvm"
+          ],
+          "rdt": [
+            "ebs",
+            "instance"
+          ]
+        }
       },
       {
         "architectures": ["I64"],
@@ -89,9 +128,17 @@
         "cpuCount": 1,
         "rootVolumeSizeInGb": 4,
         "ramSizeInMb": 3840,
-        "generation": "current",
-        "vt": ["paravirtual", "hvm"],
-        "rdt": ["ebs", "instance"]
+        "current": true,
+        "customProperties": {
+          "vt": [
+            "paravirtual",
+            "hvm"
+          ],
+          "rdt": [
+            "ebs",
+            "instance"
+          ]
+        }
       },
       {
         "architectures": ["I64"],
@@ -101,9 +148,17 @@
         "cpuCount": 8,
         "rootVolumeSizeInGb": 1,
         "ramSizeInMb": 32212,
-        "generation": "current",
-        "vt": ["paravirtual", "hvm"],
-        "rdt": ["ebs", "instance"]
+        "current": true,
+        "customProperties": {
+          "vt": [
+            "paravirtual",
+            "hvm"
+          ],
+          "rdt": [
+            "ebs",
+            "instance"
+          ]
+        }
       },
       {
         "excludesRegions": ["eu-central-1"],
@@ -114,9 +169,16 @@
         "cpuCount": 1,
         "rootVolumeSizeInGb": 1,
         "ramSizeInMb": 660,
-        "generation": "previous",
-        "vt": ["paravirtual", "hvm"],
-        "rdt": ["ebs"]
+        "current": false,
+        "customProperties": {
+          "vt": [
+            "paravirtual",
+            "hvm"
+          ],
+          "rdt": [
+            "ebs"
+          ]
+        }
       },
       {
         "excludesRegions": ["eu-central-1", "ap-southeast-2"],
@@ -127,9 +189,15 @@
         "cpuCount": 1,
         "rootVolumeSizeInGb": 1,
         "ramSizeInMb": 537,
-        "generation": "current",
-        "vt": ["hvm"],
-        "rdt": ["ebs"]
+        "current": true,
+        "customProperties": {
+          "vt": [
+            "hvm"
+          ],
+          "rdt": [
+            "ebs"
+          ]
+        }
       },
       {
         "architectures": ["I32", "I64"],
@@ -139,9 +207,15 @@
         "cpuCount": 1,
         "rootVolumeSizeInGb": 1,
         "ramSizeInMb": 1074,
-        "generation": "current",
-        "vt": ["hvm"],
-        "rdt": ["ebs"]
+        "current": true,
+        "customProperties": {
+          "vt": [
+            "hvm"
+          ],
+          "rdt": [
+            "ebs"
+          ]
+        }
       },
       {
         "architectures": ["I32", "I64"],
@@ -151,9 +225,15 @@
         "cpuCount": 1,
         "rootVolumeSizeInGb": 1,
         "ramSizeInMb": 2147,
-        "generation": "current",
-        "vt": ["hvm"],
-        "rdt": ["ebs"]
+        "current": true,
+        "customProperties": {
+          "vt": [
+            "hvm"
+          ],
+          "rdt": [
+            "ebs"
+          ]
+        }
       },
       {
         "architectures": ["I32", "I64"],
@@ -163,9 +243,15 @@
         "cpuCount": 2,
         "rootVolumeSizeInGb": 1,
         "ramSizeInMb": 4295,
-        "generation": "current",
-        "vt": ["hvm"],
-        "rdt": ["ebs"]
+        "current": true,
+        "customProperties": {
+          "vt": [
+            "hvm"
+          ],
+          "rdt": [
+            "ebs"
+          ]
+        }
       },
       {
         "architectures": ["I64"],
@@ -175,9 +261,15 @@
         "cpuCount": 2,
         "rootVolumeSizeInGb": 1,
         "ramSizeInMb": 8590,
-        "generation": "current",
-        "vt": ["hvm"],
-        "rdt": ["ebs"]
+        "current": true,
+        "customProperties": {
+          "vt": [
+            "hvm"
+          ],
+          "rdt": [
+            "ebs"
+          ]
+        }
       },
       {
         "excludesRegions": ["eu-central-1"],
@@ -188,9 +280,16 @@
         "cpuCount": 2,
         "rootVolumeSizeInGb": 420,
         "ramSizeInMb": 18360,
-        "generation": "previous",
-        "vt": ["paravirtual"],
-        "rdt": ["ebs", "instance"]
+        "current": false,
+        "customProperties": {
+          "vt": [
+            "paravirtual"
+          ],
+          "rdt": [
+            "ebs",
+            "instance"
+          ]
+        }
       },
       {
         "excludesRegions": ["eu-central-1"],
@@ -201,9 +300,16 @@
         "cpuCount": 4,
         "rootVolumeSizeInGb": 850,
         "ramSizeInMb": 36721,
-        "generation": "previous",
-        "vt": ["paravirtual"],
-        "rdt": ["ebs", "instance"]
+        "current": false,
+        "customProperties": {
+          "vt": [
+            "paravirtual"
+          ],
+          "rdt": [
+            "ebs",
+            "instance"
+          ]
+        }
       },
       {
         "excludesRegions": ["eu-central-1"],
@@ -214,9 +320,16 @@
         "cpuCount": 8,
         "rootVolumeSizeInGb": 1690,
         "ramSizeInMb": 73443,
-        "generation": "previous",
-        "vt": ["paravirtual"],
-        "rdt": ["ebs", "instance"]
+        "current": false,
+        "customProperties": {
+          "vt": [
+            "paravirtual"
+          ],
+          "rdt": [
+            "ebs",
+            "instance"
+          ]
+        }
       },
       {
         "excludesRegions": ["eu-central-1"],
@@ -227,9 +340,17 @@
         "cpuCount": 2,
         "rootVolumeSizeInGb": 350,
         "ramSizeInMb": 1825,
-        "generation": "previous",
-        "vt": ["paravirtual", "hvm"],
-        "rdt": ["ebs", "instance"]
+        "current": false,
+        "customProperties": {
+          "vt": [
+            "paravirtual",
+            "hvm"
+          ],
+          "rdt": [
+            "ebs",
+            "instance"
+          ]
+        }
       },
       {
         "excludesRegions": ["eu-central-1"],
@@ -240,9 +361,17 @@
         "cpuCount": 8,
         "rootVolumeSizeInGb": 1690,
         "ramSizeInMb": 7516,
-        "generation": "previous",
-        "vt": ["paravirtual", "hvm"],
-        "rdt": ["ebs", "instance"]
+        "current": false,
+        "customProperties": {
+          "vt": [
+            "paravirtual",
+            "hvm"
+          ],
+          "rdt": [
+            "ebs",
+            "instance"
+          ]
+        }
       },
       {
         "excludesRegions": ["eu-central-1"],
@@ -253,9 +382,16 @@
         "cpuCount": 32,
         "rootVolumeSizeInGb": 3370,
         "ramSizeInMb": 64961,
-        "generation": "previous",
-        "vt": ["hvm"],
-        "rdt": ["ebs", "instance"]
+        "current": false,
+        "customProperties": {
+          "vt": [
+            "hvm"
+          ],
+          "rdt": [
+            "ebs",
+            "instance"
+          ]
+        }
       },
       {
         "excludesRegions": ["eu-central-1"],
@@ -266,9 +402,15 @@
         "cpuCount": 32,
         "rootVolumeSizeInGb": 240,
         "ramSizeInMb": 261993,
-        "generation": "previous",
-        "vt": ["hvm"],
-        "rdt": ["ebs"]
+        "current": false,
+        "customProperties": {
+          "vt": [
+            "hvm"
+          ],
+          "rdt": [
+            "ebs"
+          ]
+        }
       },
       {
         "excludesRegions": ["eu-central-1"],
@@ -279,9 +421,16 @@
         "cpuCount": 16,
         "rootVolumeSizeInGb": 1690,
         "ramSizeInMb": 24159,
-        "generation": "previous",
-        "vt": ["hvm"],
-        "rdt": ["ebs", "instance"]
+        "current": false,
+        "customProperties": {
+          "vt": [
+            "hvm"
+          ],
+          "rdt": [
+            "ebs",
+            "instance"
+          ]
+        }
       },
       {
         "excludesRegions": ["eu-central-1"],
@@ -292,9 +441,15 @@
         "cpuCount": 8,
         "rootVolumeSizeInGb": 60,
         "ramSizeInMb": 16106,
-        "generation": "current",
-        "vt": ["hvm"],
-        "rdt": ["ebs"]
+        "current": true,
+        "customProperties": {
+          "vt": [
+            "hvm"
+          ],
+          "rdt": [
+            "ebs"
+          ]
+        }
       },
       {
         "excludesRegions": ["eu-central-1"],
@@ -305,9 +460,17 @@
         "cpuCount": 16,
         "rootVolumeSizeInGb": 2048,
         "ramSizeInMb": 64961,
-        "generation": "previous",
-        "vt": ["hvm", "paravirtual"],
-        "rdt": ["ebs", "instance"]
+        "current": false,
+        "customProperties": {
+          "vt": [
+            "hvm",
+            "paravirtual"
+          ],
+          "rdt": [
+            "ebs",
+            "instance"
+          ]
+        }
       },
       {
         "excludesRegions": ["eu-central-1"],
@@ -318,9 +481,17 @@
         "cpuCount": 16,
         "rootVolumeSizeInGb": 49152,
         "ramSizeInMb": 125627,
-        "generation": "current",
-        "vt": ["hvm", "paravirtual"],
-        "rdt": ["ebs", "instance"]
+        "current": true,
+        "customProperties": {
+          "vt": [
+            "hvm",
+            "paravirtual"
+          ],
+          "rdt": [
+            "ebs",
+            "instance"
+          ]
+        }
       },
       {
         "architectures": ["I64", "I32"],
@@ -330,9 +501,17 @@
         "cpuCount": 2,
         "rootVolumeSizeInGb": 32,
         "ramSizeInMb": 4027,
-        "generation": "current",
-        "vt": ["hvm", "paravirtual"],
-        "rdt": ["ebs", "instance"]
+        "current": true,
+        "customProperties": {
+          "vt": [
+            "hvm",
+            "paravirtual"
+          ],
+          "rdt": [
+            "ebs",
+            "instance"
+          ]
+        }
       },
       {
         "architectures": ["I64"],
@@ -342,9 +521,17 @@
         "cpuCount": 4,
         "rootVolumeSizeInGb": 80,
         "ramSizeInMb": 8053,
-        "generation": "current",
-        "vt": ["hvm", "paravirtual"],
-        "rdt": ["ebs", "instance"]
+        "current": true,
+        "customProperties": {
+          "vt": [
+            "hvm",
+            "paravirtual"
+          ],
+          "rdt": [
+            "ebs",
+            "instance"
+          ]
+        }
       },
       {
         "architectures": ["I64"],
@@ -354,9 +541,17 @@
         "cpuCount": 8,
         "rootVolumeSizeInGb": 160,
         "ramSizeInMb": 16106,
-        "generation": "current",
-        "vt": ["hvm", "paravirtual"],
-        "rdt": ["ebs", "instance"]
+        "current": true,
+        "customProperties": {
+          "vt": [
+            "hvm",
+            "paravirtual"
+          ],
+          "rdt": [
+            "ebs",
+            "instance"
+          ]
+        }
       },
       {
         "architectures": ["I64"],
@@ -366,9 +561,17 @@
         "cpuCount": 16,
         "rootVolumeSizeInGb": 320,
         "ramSizeInMb": 32212,
-        "generation": "current",
-        "vt": ["hvm", "paravirtual"],
-        "rdt": ["ebs", "instance"]
+        "current": true,
+        "customProperties": {
+          "vt": [
+            "hvm",
+            "paravirtual"
+          ],
+          "rdt": [
+            "ebs",
+            "instance"
+          ]
+        }
       },
       {
         "architectures": ["I64"],
@@ -378,9 +581,17 @@
         "cpuCount": 32,
         "rootVolumeSizeInGb": 640,
         "ramSizeInMb": 64424,
-        "generation": "current",
-        "vt": ["hvm", "paravirtual"],
-        "rdt": ["ebs", "instance"]
+        "current": true,
+        "customProperties": {
+          "vt": [
+            "hvm",
+            "paravirtual"
+          ],
+          "rdt": [
+            "ebs",
+            "instance"
+          ]
+        }
       },
       {
         "architectures" : [ "I64" ],
@@ -390,9 +601,15 @@
         "cpuCount" : 2,
         "rootVolumeSizeInGb" : 1,
         "ramSizeInMb" : 3840,
-        "generation": "current",
-        "vt": ["hvm"],
-        "rdt": ["ebs"]
+        "current": true,
+        "customProperties": {
+          "vt": [
+            "hvm"
+          ],
+          "rdt": [
+            "ebs"
+          ]
+        }
       },
       {
         "architectures" : [ "I64" ],
@@ -402,9 +619,15 @@
         "cpuCount" : 4,
         "rootVolumeSizeInGb" : 1,
         "ramSizeInMb" : 7680,
-        "generation": "current",
-        "vt": ["hvm"],
-        "rdt": ["ebs"]
+        "current": true,
+        "customProperties": {
+          "vt": [
+            "hvm"
+          ],
+          "rdt": [
+            "ebs"
+          ]
+        }
       },
       {
         "architectures" : [ "I64" ],
@@ -414,9 +637,15 @@
         "cpuCount" : 8,
         "rootVolumeSizeInGb" : 1,
         "ramSizeInMb" : 15360,
-        "generation": "current",
-        "vt": ["hvm"],
-        "rdt": ["ebs"]
+        "current": true,
+        "customProperties": {
+          "vt": [
+            "hvm"
+          ],
+          "rdt": [
+            "ebs"
+          ]
+        }
       },
       {
         "architectures" : [ "I64" ],
@@ -426,9 +655,15 @@
         "cpuCount" : 16,
         "rootVolumeSizeInGb" : 1,
         "ramSizeInMb" : 30720,
-        "generation": "current",
-        "vt": ["hvm"],
-        "rdt": ["ebs"]
+        "current": true,
+        "customProperties": {
+          "vt": [
+            "hvm"
+          ],
+          "rdt": [
+            "ebs"
+          ]
+        }
       },
       {
         "architectures" : [ "I64" ],
@@ -438,9 +673,15 @@
         "cpuCount" : 36,
         "rootVolumeSizeInGb" : 1,
         "ramSizeInMb" : 61440,
-        "generation": "current",
-        "vt": ["hvm"],
-        "rdt": ["ebs"]
+        "current": true,
+        "customProperties": {
+          "vt": [
+            "hvm"
+          ],
+          "rdt": [
+            "ebs"
+          ]
+        }
       },
       {
         "excludesRegions": ["us-west-1", "sa-east-1"],
@@ -451,9 +692,16 @@
         "cpuCount" : 4,
         "rootVolumeSizeInGb" : 1,
         "ramSizeInMb" : 31232,
-        "generation": "current",
-        "vt": ["hvm"],
-        "rdt": ["ebs", "instance"]
+        "current": true,
+        "customProperties": {
+          "vt": [
+            "hvm"
+          ],
+          "rdt": [
+            "ebs",
+            "instance"
+          ]
+        }
       },
       {
         "excludesRegions": ["us-west-1", "sa-east-1"],
@@ -464,9 +712,16 @@
         "cpuCount" : 8,
         "rootVolumeSizeInGb" : 1,
         "ramSizeInMb" : 62464,
-        "generation": "current",
-        "vt": ["hvm"],
-        "rdt": ["ebs", "instance"]
+        "current": true,
+        "customProperties": {
+          "vt": [
+            "hvm"
+          ],
+          "rdt": [
+            "ebs",
+            "instance"
+          ]
+        }
       },
       {
         "excludesRegions": ["us-west-1", "sa-east-1"],
@@ -477,9 +732,16 @@
         "cpuCount" : 16,
         "rootVolumeSizeInGb" : 1,
         "ramSizeInMb" : 124928,
-        "generation": "current",
-        "vt": ["hvm"],
-        "rdt": ["ebs", "instance"]
+        "current": true,
+        "customProperties": {
+          "vt": [
+            "hvm"
+          ],
+          "rdt": [
+            "ebs",
+            "instance"
+          ]
+        }
       },
       {
         "excludesRegions": ["us-west-1", "sa-east-1"],
@@ -490,9 +752,16 @@
         "cpuCount" : 36,
         "rootVolumeSizeInGb" : 1,
         "ramSizeInMb" : 249856,
-        "generation": "current",
-        "vt": ["hvm"],
-        "rdt": ["ebs", "instance"]
+        "current": true,
+        "customProperties": {
+          "vt": [
+            "hvm"
+          ],
+          "rdt": [
+            "ebs",
+            "instance"
+          ]
+        }
       },
       {
         "architectures": ["I64"],
@@ -502,9 +771,16 @@
         "cpuCount": 4,
         "rootVolumeSizeInGb": 800,
         "ramSizeInMb": 32749,
-        "generation": "current",
-        "vt": ["hvm"],
-        "rdt": ["ebs", "instance"]
+        "current": true,
+        "customProperties": {
+          "vt": [
+            "hvm"
+          ],
+          "rdt": [
+            "ebs",
+            "instance"
+          ]
+        }
       },
       {
         "architectures": ["I64"],
@@ -514,9 +790,16 @@
         "cpuCount": 8,
         "rootVolumeSizeInGb": 1600,
         "ramSizeInMb": 65498,
-        "generation": "current",
-        "vt": ["hvm"],
-        "rdt": ["ebs", "instance"]
+        "current": true,
+        "customProperties": {
+          "vt": [
+            "hvm"
+          ],
+          "rdt": [
+            "ebs",
+            "instance"
+          ]
+        }
       },
       {
         "architectures": ["I64"],
@@ -526,9 +809,16 @@
         "cpuCount": 16,
         "rootVolumeSizeInGb": 3200,
         "ramSizeInMb": 130996,
-        "generation": "current",
-        "vt": ["hvm"],
-        "rdt": ["ebs", "instance"]
+        "current": true,
+        "customProperties": {
+          "vt": [
+            "hvm"
+          ],
+          "rdt": [
+            "ebs",
+            "instance"
+          ]
+        }
       },
       {
         "architectures": ["I64"],
@@ -538,9 +828,16 @@
         "cpuCount": 32,
         "rootVolumeSizeInGb": 6400,
         "ramSizeInMb": 261993,
-        "generation": "current",
-        "vt": ["hvm"],
-        "rdt": ["ebs", "instance"]
+        "current": true,
+        "customProperties": {
+          "vt": [
+            "hvm"
+          ],
+          "rdt": [
+            "ebs",
+            "instance"
+          ]
+        }
       },
       {
         "architectures": ["I64"],
@@ -550,9 +847,16 @@
         "cpuCount": 2,
         "rootVolumeSizeInGb": 32,
         "ramSizeInMb": 15360,
-        "generation": "current",
-        "vt": ["hvm"],
-        "rdt": ["ebs", "instance"]
+        "current": true,
+        "customProperties": {
+          "vt": [
+            "hvm"
+          ],
+          "rdt": [
+            "ebs",
+            "instance"
+          ]
+        }
       },
       {
         "architectures": ["I64"],
@@ -562,9 +866,16 @@
         "cpuCount": 4,
         "rootVolumeSizeInGb": 80,
         "ramSizeInMb": 31232,
-        "generation": "current",
-        "vt": ["hvm"],
-        "rdt": ["ebs", "instance"]
+        "current": true,
+        "customProperties": {
+          "vt": [
+            "hvm"
+          ],
+          "rdt": [
+            "ebs",
+            "instance"
+          ]
+        }
       },
       {
         "architectures": ["I64"],
@@ -574,9 +885,16 @@
         "cpuCount": 8,
         "rootVolumeSizeInGb": 160,
         "ramSizeInMb": 62464,
-        "generation": "current",
-        "vt": ["hvm"],
-        "rdt": ["ebs", "instance"]
+        "current": true,
+        "customProperties": {
+          "vt": [
+            "hvm"
+          ],
+          "rdt": [
+            "ebs",
+            "instance"
+          ]
+        }
       },
       {
         "architectures": ["I64"],
@@ -586,9 +904,16 @@
         "cpuCount": 16,
         "rootVolumeSizeInGb": 320,
         "ramSizeInMb": 124928,
-        "generation": "current",
-        "vt": ["hvm"],
-        "rdt": ["ebs", "instance"]
+        "current": true,
+        "customProperties": {
+          "vt": [
+            "hvm"
+          ],
+          "rdt": [
+            "ebs",
+            "instance"
+          ]
+        }
       },
       {
         "architectures": ["I64"],
@@ -598,9 +923,16 @@
         "cpuCount": 32,
         "rootVolumeSizeInGb": 640,
         "ramSizeInMb": 249856,
-        "generation": "current",
-        "vt": ["hvm"],
-        "rdt": ["ebs", "instance"]
+        "current": true,
+        "customProperties": {
+          "vt": [
+            "hvm"
+          ],
+          "rdt": [
+            "ebs",
+            "instance"
+          ]
+        }
       },
       {
         "architectures": ["I64"],
@@ -610,58 +942,88 @@
         "cpuCount": 2,
         "rootVolumeSizeInGb": 1,
         "ramSizeInMb": 8592,
-        "generation": "current",
-        "vt": ["hvm"],
-        "rdt": ["ebs"]
+        "current": true,
+        "customProperties": {
+          "vt": [
+            "hvm"
+          ],
+          "rdt": [
+            "ebs"
+          ]
+        }
       },
       {
-      "architectures": ["I64"],
-      "id": "m4.xlarge",
-      "name": "General Purpose M4 Large Instance (m4.xlarge)",
-      "description": "13 ECUs, 4 vCPUs, 2.4 GHz, Intel Xeon E5-2676v3, 16 GiB memory, EBS only",
-      "cpuCount": 4,
-      "rootVolumeSizeInGb": 1,
-      "ramSizeInMb": 17184,
-      "generation": "current",
-      "vt": ["hvm"],
-      "rdt": ["ebs"]
+        "architectures": ["I64"],
+        "id": "m4.xlarge",
+        "name": "General Purpose M4 Large Instance (m4.xlarge)",
+        "description": "13 ECUs, 4 vCPUs, 2.4 GHz, Intel Xeon E5-2676v3, 16 GiB memory, EBS only",
+        "cpuCount": 4,
+        "rootVolumeSizeInGb": 1,
+        "ramSizeInMb": 17184,
+        "current": true,
+        "customProperties": {
+          "vt": [
+            "hvm"
+          ],
+          "rdt": [
+            "ebs"
+          ]
+        }
       },
       {
-      "architectures": ["I64"],
-      "id": "m4.2xlarge",
-      "name": "General Purpose M4 Large Instance (m4.2xlarge)",
-      "description": "26 ECUs, 8 vCPUs, 2.4 GHz, Intel Xeon E5-2676v3, 32 GiB memory, EBS only",
-      "cpuCount": 8,
-      "rootVolumeSizeInGb": 1,
-      "ramSizeInMb": 34368,
-      "generation": "current",
-      "vt": ["hvm"],
-      "rdt": ["ebs"]
+        "architectures": ["I64"],
+        "id": "m4.2xlarge",
+        "name": "General Purpose M4 Large Instance (m4.2xlarge)",
+        "description": "26 ECUs, 8 vCPUs, 2.4 GHz, Intel Xeon E5-2676v3, 32 GiB memory, EBS only",
+        "cpuCount": 8,
+        "rootVolumeSizeInGb": 1,
+        "ramSizeInMb": 34368,
+        "current": true,
+        "customProperties": {
+          "vt": [
+            "hvm"
+          ],
+          "rdt": [
+            "ebs"
+          ]
+        }
       },
       {
-      "architectures": ["I64"],
-      "id": "m4.4xlarge",
-      "name": "General Purpose M4 Large Instance (m4.4xlarge)",
-      "description": "53.5 ECUs, 16 vCPUs, 2.4 GHz, Intel Xeon E5-2676v3, 64 GiB memory, EBS only",
-      "cpuCount": 16,
-      "rootVolumeSizeInGb": 1,
-      "ramSizeInMb": 68736,
-      "generation": "current",
-      "vt": ["hvm"],
-      "rdt": ["ebs"]
+        "architectures": ["I64"],
+        "id": "m4.4xlarge",
+        "name": "General Purpose M4 Large Instance (m4.4xlarge)",
+        "description": "53.5 ECUs, 16 vCPUs, 2.4 GHz, Intel Xeon E5-2676v3, 64 GiB memory, EBS only",
+        "cpuCount": 16,
+        "rootVolumeSizeInGb": 1,
+        "ramSizeInMb": 68736,
+        "current": true,
+        "customProperties": {
+          "vt": [
+            "hvm"
+          ],
+          "rdt": [
+            "ebs"
+          ]
+        }
       },
       {
-      "architectures": ["I64"],
-       "id": "m4.10xlarge",
-       "name": "General Purpose M4 Large Instance (m4.10xlarge)",
-       "description": "124.5 ECUs, 40 vCPUs, 2.4 GHz, Intel Xeon E5-2676v3, 160 GiB memory, EBS only",
-       "cpuCount": 40,
-       "rootVolumeSizeInGb": 1,
-       "ramSizeInMb": 171840,
-       "generation": "current",
-       "vt": ["hvm"],
-       "rdt": ["ebs"]
-    }
+        "architectures": ["I64"],
+        "id": "m4.10xlarge",
+        "name": "General Purpose M4 Large Instance (m4.10xlarge)",
+        "description": "124.5 ECUs, 40 vCPUs, 2.4 GHz, Intel Xeon E5-2676v3, 160 GiB memory, EBS only",
+        "cpuCount": 40,
+        "rootVolumeSizeInGb": 1,
+        "ramSizeInMb": 171840,
+        "current": true,
+        "customProperties": {
+          "vt": [
+            "hvm"
+          ],
+          "rdt": [
+            "ebs"
+          ]
+        }
+      }
     ]
   }
 ]

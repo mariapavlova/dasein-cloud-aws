@@ -601,7 +601,7 @@ public class EC2InstanceTest extends AwsTestBase {
         EC2Instance ec2InstanceMock = PowerMockito.mock(EC2Instance.class);
 
         when(ec2InstanceMock.listAllProducts()).thenCallRealMethod();
-        when(ec2InstanceMock.listProducts(any(VirtualMachineProductFilterOptions.class), any(Architecture.class)))
+        when(ec2InstanceMock.listProducts(any(VirtualMachineProductFilterOptions.class)))
                 .thenCallRealMethod();
         when(ec2InstanceMock.toProduct(any(JSONObject.class))).thenCallRealMethod();
         PowerMockito.when(ec2InstanceMock, method(AbstractProviderService.class, "getProvider")).withNoArguments()
